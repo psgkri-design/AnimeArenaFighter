@@ -783,3 +783,22 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Floating architecture uses a single MultiMesh draw submission.
 - No new realtime lights were added.
 - Lower emission and metallic response reduce the plastic/neon toy appearance without adding shader passes.
+
+
+## Update 41 — Correct Quaternius UAL clip binding
+
+### Fixed
+- Fixed the adult-rig rejection caused by expecting legacy `*_Loop` clip names that are not present in Godot's imported UAL1 Standard file.
+- Adult validation now uses the actual imported clips `Idle`, `Jog_Fwd` and `Hit_Chest`.
+- Locomotion aliases now target `Walk`, `Jog_Fwd` and `Jump` as imported by Godot.
+- Combat aliases now resolve dynamically to semantic UAL clips when present and fall back to known imported actions instead of rejecting the whole adult rig.
+
+### Animation
+- Adult hit/death/dance states map directly to verified UAL clips.
+- Attack/dodge states probe the available UAL semantic clip names at runtime, so missing optional clips do not force a fallback to the chibi rig.
+
+### Graphics
+- The full-height Quaternius body remains the required primary visual; KayKit stays fallback-only.
+
+### Testing
+- CI now validates the real adult `Idle`, `Jog_Fwd` and `Hit_Chest` clips for every fighter variant.

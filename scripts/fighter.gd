@@ -313,7 +313,7 @@ func _get_adult_animation_library() -> AnimationLibrary:
                 merged.add_animation(alias_name, animation)
 
     source_root.free()
-    if merged.has_animation("Idle_Loop") and merged.has_animation("Sword_Attack"):
+    if merged.has_animation("Idle") and merged.has_animation("Jog_Fwd"):
         adult_animation_library_cache = merged
     return adult_animation_library_cache
 
@@ -325,7 +325,7 @@ func _library_drives_current_skeleton(library: AnimationLibrary) -> bool:
         bones[String(skeleton.get_bone_name(index))] = true
     var checked: int = 0
     var matched: int = 0
-    var probe_names: Array[StringName] = [&"Idle_Loop", &"Sword_Attack", &"Punch_Jab"]
+    var probe_names: Array[StringName] = [&"Idle", &"Jog_Fwd", &"Hit_Chest"]
     for probe_name in probe_names:
         if not library.has_animation(probe_name):
             continue
@@ -650,12 +650,12 @@ func _idle_animation() -> StringName:
 
 func _movement_animation() -> StringName:
     if not is_on_floor():
-        return &"Jump_Loop" if adult_rig else &"Jump_Idle"
+        return &"Jump" if adult_rig else &"Jump_Idle"
     var horizontal := Vector3(velocity.x, 0.0, velocity.z)
     if horizontal.length() < 0.3:
         return _idle_animation()
     if adult_rig:
-        return &"Walk_Loop" if horizontal.length() < 4.2 else &"Jog_Fwd_Loop"
+        return &"Walk" if horizontal.length() < 4.2 else &"Jog_Fwd"
     var local_direction: Vector3 = global_basis.inverse() * horizontal.normalized()
     if local_direction.z > 0.45:
         return &"Walking_Backwards"
@@ -711,44 +711,66 @@ func _attack_animation(kind: String, index: int) -> StringName:
 
 func _adult_animation_alias(name: StringName) -> StringName:
     var aliases := {
-        &"Idle": &"Idle_Loop",
-        &"2H_Melee_Idle": &"Sword_Idle",
-        &"Unarmed_Idle": &"Idle_Loop",
-        &"Jump_Idle": &"Jump_Loop",
-        &"Running_A": &"Jog_Fwd_Loop",
-        &"Walking_Backwards": &"Walk_Loop",
-        &"Running_Strafe_Left": &"Jog_Fwd_Loop",
-        &"Running_Strafe_Right": &"Jog_Fwd_Loop",
-        &"Dodge_Backward": &"Roll",
-        &"Dodge_Forward": &"Roll",
-        &"Dodge_Left": &"Roll",
-        &"Dodge_Right": &"Roll",
+        &"Idle": &"Idle",
+        &"2H_Melee_Idle": &"Idle",
+        &"Unarmed_Idle": &"Idle",
+        &"Jump_Idle": &"Jump",
+        &"Running_A": &"Jog_Fwd",
+        &"Walking_Backwards": &"Walk",
+        &"Running_Strafe_Left": &"Jog_Fwd",
+        &"Running_Strafe_Right": &"Jog_Fwd",
+        &"Dodge_Backward": &"Jump_Land",
+        &"Dodge_Forward": &"Jump_Land",
+        &"Dodge_Left": &"Jump_Land",
+        &"Dodge_Right": &"Jump_Land",
         &"Death_A": &"Death01",
-        &"Cheer": &"Dance_Loop",
-        &"Blocking": &"Sword_Idle",
+        &"Cheer": &"Dance",
+        &"Blocking": &"Idle",
         &"Block_Hit": &"Hit_Chest",
         &"Lie_Down": &"Death01",
         &"Lie_StandUp": &"Jump_Land",
         &"Hit_A": &"Hit_Chest",
         &"Hit_B": &"Hit_Head",
-        &"Dualwield_Melee_Attack_Slice": &"Sword_Attack",
-        &"Dualwield_Melee_Attack_Chop": &"Sword_Attack",
-        &"Dualwield_Melee_Attack_Stab": &"Sword_Attack",
-        &"1H_Melee_Attack_Slice_Diagonal": &"Sword_Attack",
-        &"1H_Melee_Attack_Chop": &"Sword_Attack",
-        &"1H_Melee_Attack_Stab": &"Sword_Attack",
-        &"2H_Melee_Attack_Slice": &"Sword_Attack",
-        &"2H_Melee_Attack_Chop": &"Sword_Attack",
-        &"2H_Melee_Attack_Stab": &"Sword_Attack",
-        &"2H_Melee_Attack_Spin": &"Sword_Attack",
-        &"2H_Melee_Attack_Spinning": &"Sword_Attack",
-        &"Unarmed_Melee_Attack_Punch_A": &"Punch_Jab",
-        &"Unarmed_Melee_Attack_Punch_B": &"Punch_Cross",
-        &"Unarmed_Melee_Attack_Kick": &"Punch_Cross",
-        &"Spellcast_Long": &"Spell_Simple_Shoot",
-        &"Spellcast_Shoot": &"Spell_Simple_Shoot"
+        &"Dualwield_Melee_Attack_Slice": &"Interact",
+        &"Dualwield_Melee_Attack_Chop": &"Interact",
+        &"Dualwield_Melee_Attack_Stab": &"Interact",
+        &"1H_Melee_Attack_Slice_Diagonal": &"Interact",
+        &"1H_Melee_Attack_Chop": &"Interact",
+        &"1H_Melee_Attack_Stab": &"Interact",
+        &"2H_Melee_Attack_Slice": &"Interact",
+        &"2H_Melee_Attack_Chop": &"Interact",
+        &"2H_Melee_Attack_Stab": &"Interact",
+        &"2H_Melee_Attack_Spin": &"Interact",
+        &"2H_Melee_Attack_Spinning": &"Interact",
+        &"Unarmed_Melee_Attack_Punch_A": &"Interact",
+        &"Unarmed_Melee_Attack_Punch_B": &"Interact",
+        &"Unarmed_Melee_Attack_Kick": &"Interact",
+        &"Spellcast_Long": &"Interact",
+        &"Spellcast_Shoot": &"Interact"
     }
-    return aliases.get(name, name)
+    var desired: StringName = aliases.get(name, name)
+    if animation_player != null and animation_player.has_animation(desired):
+        return desired
+
+    # Prefer semantic combat clips when present in the Standard UAL file.
+    var candidates: Array[StringName] = []
+    var source_name := String(name)
+    if "Spell" in source_name:
+        candidates = [&"Spell_Simple_Shoot", &"Interact", &"Idle"]
+    elif "Punch" in source_name or "Unarmed" in source_name:
+        candidates = [&"Punch_Jab", &"Punch_Cross", &"Interact", &"Idle"]
+    elif "Melee" in source_name or "Sword" in source_name:
+        candidates = [&"Sword_Attack", &"Interact", &"Idle"]
+    elif "Dodge" in source_name:
+        candidates = [&"Roll", &"Jump_Land", &"Jog_Fwd", &"Idle"]
+    else:
+        candidates = [desired, &"Idle"]
+
+    if animation_player != null:
+        for candidate in candidates:
+            if animation_player.has_animation(candidate):
+                return candidate
+    return &"Idle"
 
 func _play_animation(name: StringName, blend: float = 0.12, speed: float = 1.0, force: bool = false) -> void:
     if animation_player == null:
