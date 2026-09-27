@@ -46,6 +46,22 @@ VERSION 0.2.0 — 2026-09-27 — CHARACTER SELECT / ROSTER UPDATE
 - Next target: integrate higher-quality licensed external 3D character assets and animation sets.
 
 ==================================================
+VERSION 0.2.1 — 2026-09-27 — REAL 3D ASSET INTEGRATION
+==================================================
+- Added automated download of KayKit Adventurers assets during Android CI builds.
+- Asset license verified as CC0 1.0 / commercial use allowed.
+- Integrated four rigged/animated GLB character bases:
+  Rogue Hooded, Mage, Knight and Rogue.
+- Mapped those bases to the four game fighters.
+- Added automatic idle-animation discovery/playback.
+- Added custom procedural overlays on top of the imported models:
+  demon horns/wings/tail, mage magic accents, templar cape/cross,
+  cyber-bunny ears and orange tech accents.
+- Added graceful fallback to the internal procedural models when external assets
+  are not present in a local source checkout.
+- Added ASSET_SOURCES.txt to track external asset provenance and licenses.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.

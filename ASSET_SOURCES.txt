@@ -1,0 +1,23 @@
+ANIME ARENA FIGHTER — EXTERNAL ASSET SOURCES
+
+1. KayKit Character Pack: Adventurers 1.0
+Source repository:
+https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+
+Used files:
+- Rogue_Hooded.glb
+- Mage.glb
+- Knight.glb
+- Rogue.glb
+
+License:
+Creative Commons Zero v1.0 Universal (CC0 1.0)
+Commercial and personal use allowed; attribution not required.
+
+Project use:
+These models are used as higher-quality game-ready base meshes.
+Anime Arena Fighter adds its own gameplay, visual effects, materials,
+character accessories and combat identities on top.
+
+Original asset license is copied into the Android build workspace as:
+assets/kaykit/KAYKIT_LICENSE.txt

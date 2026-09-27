@@ -14,6 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Fetch CC0 character assets
+        run: |
+          mkdir -p assets/kaykit
+          BASE="https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Characters/gltf"
+          curl -fL "$BASE/Rogue_Hooded.glb" -o assets/kaykit/Rogue_Hooded.glb
+          curl -fL "$BASE/Mage.glb" -o assets/kaykit/Mage.glb
+          curl -fL "$BASE/Knight.glb" -o assets/kaykit/Knight.glb
+          curl -fL "$BASE/Rogue.glb" -o assets/kaykit/Rogue.glb
+          curl -fL "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/LICENSE.txt" -o assets/kaykit/KAYKIT_LICENSE.txt
+
       - name: Create debug keystore
         run: |
           mkdir -p "$HOME/.android"

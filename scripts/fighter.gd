@@ -89,11 +89,79 @@ func _build_model() -> void:
     model_root = Node3D.new()
     model_root.name = "Model"
     add_child(model_root)
+
+    if _try_build_external_model():
+        _decorate_external_model()
+        _add_glow()
+        return
+
     match variant:
         0: _build_succubus()
         1: _build_mage()
         2: _build_templar()
         3: _build_bunny()
+
+func _try_build_external_model() -> bool:
+    var paths: Array[String] = [
+        "res://assets/kaykit/Rogue_Hooded.glb",
+        "res://assets/kaykit/Mage.glb",
+        "res://assets/kaykit/Knight.glb",
+        "res://assets/kaykit/Rogue.glb"
+    ]
+    var path: String = paths[variant]
+    if not ResourceLoader.exists(path):
+        return false
+
+    var resource: Resource = load(path)
+    if not (resource is PackedScene):
+        return false
+
+    var scene: PackedScene = resource as PackedScene
+    var visual: Node3D = scene.instantiate() as Node3D
+    if visual == null:
+        return false
+
+    visual.name = "ExternalCharacter"
+    visual.rotation.y = PI
+    visual.scale = Vector3.ONE * 0.92
+    visual.position = Vector3(0, 0.02, 0)
+    model_root.add_child(visual)
+    _play_idle_recursive(visual)
+    return true
+
+func _play_idle_recursive(node: Node) -> bool:
+    if node is AnimationPlayer:
+        var animation_player := node as AnimationPlayer
+        for animation_name in animation_player.get_animation_list():
+            if "idle" in String(animation_name).to_lower():
+                animation_player.play(animation_name)
+                return true
+    for child in node.get_children():
+        if _play_idle_recursive(child):
+            return true
+    return false
+
+func _decorate_external_model() -> void:
+    match variant:
+        0:
+            _cone(Vector3(-0.27, 2.30, 0.02), Vector3(0.24,0.48,0.24), Color(0.02,0.02,0.035), Vector3(0,0,-0.48))
+            _cone(Vector3(0.27, 2.30, 0.02), Vector3(0.24,0.48,0.24), Color(0.02,0.02,0.035), Vector3(0,0,0.48))
+            _box(Vector3(-0.68,1.40,0.24), Vector3(0.08,0.52,0.62), Color(0.025,0.025,0.045), Vector3(0.08,0,-0.58))
+            _box(Vector3(0.68,1.40,0.24), Vector3(0.08,0.52,0.62), Color(0.025,0.025,0.045), Vector3(0.08,0,0.58))
+            _cylinder(Vector3(0,0.72,0.52), Vector3(0.07,0.65,0.07), accent_color, Vector3(1.25,0,0))
+        1:
+            _sphere(Vector3(0.64,1.60,0.10), Vector3(0.13,0.13,0.13), Color(0.25,0.90,1.0))
+            _sphere(Vector3(-0.62,1.42,0.16), Vector3(0.09,0.09,0.09), Color(1.0,0.35,0.15))
+        2:
+            _box(Vector3(0,1.30,-0.28), Vector3(0.80,1.05,0.05), Color(0.84,0.79,0.68))
+            _box(Vector3(0,1.35,0.34), Vector3(0.09,0.58,0.05), Color(0.62,0.025,0.04))
+            _box(Vector3(0,1.48,0.34), Vector3(0.30,0.08,0.05), Color(0.62,0.025,0.04))
+        3:
+            _capsule(Vector3(-0.20,2.48,0), Vector3(0.13,0.58,0.12), Color(0.88,0.90,0.95), Vector3(0,0,-0.08))
+            _capsule(Vector3(0.20,2.48,0), Vector3(0.13,0.58,0.12), Color(0.88,0.90,0.95), Vector3(0,0,0.08))
+            _box(Vector3(0,1.05,0.34), Vector3(0.12,0.62,0.04), accent_color)
+            _box(Vector3(-0.52,1.30,0.05), Vector3(0.09,0.25,0.34), accent_color)
+            _box(Vector3(0.52,1.30,0.05), Vector3(0.09,0.25,0.34), accent_color)
 
 func _mat(color: Color) -> ShaderMaterial:
     var mat := ShaderMaterial.new()
