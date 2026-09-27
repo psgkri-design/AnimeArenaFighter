@@ -1,0 +1,44 @@
+ANIME ARENA FIGHTER — UPDATE LOG
+Repository: psgkri-design/AnimeArenaFighter
+
+==================================================
+VERSION 0.1.0 — 2026-09-27
+==================================================
+- Created initial Godot 4.7.2 project.
+- Added Android export preset for ARM64.
+- Added automated APK build with GitHub Actions.
+- Added 1v1 arena prototype.
+- Added third-person combat camera and lock-on.
+- Added touch joystick and mobile action buttons.
+- Added light combo, heavy attack, dash, dodge, block and parry.
+- Added stamina, energy and ultimate gauges.
+- Added four prototype skills.
+- Added enemy AI.
+- Added KO / victory / defeat / rematch flow.
+- Added toon/energy shaders.
+- Added 30 FPS and 60 FPS options.
+- Fixed Godot 4.7 typing and Android ETC2/ASTC export requirements.
+- Produced first successful Android APK build.
+
+==================================================
+VERSION 0.2.0 — IN DEVELOPMENT — 2026-09-27
+==================================================
+Planned / currently implementing:
+- Force landscape 16:9 presentation.
+- Expand roster from 2 to 4 fighters.
+- Separate PLAYER and ENEMY character selection.
+- New character-select interface with portraits/cards, stats and role descriptions.
+- Four archetypes:
+  1. Succubus Assassin
+  2. Arcane Mage
+  3. Templar Knight
+  4. Cyber Bunny Operative
+- Give each fighter different stats and combat identity.
+- Improve procedural character silhouettes and costumes.
+- Improve arena presentation and UI polish.
+- Continue replacing prototype visuals with higher-quality, license-safe assets.
+
+==================================================
+RULE FOR FUTURE UPDATES
+==================================================
+Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.
