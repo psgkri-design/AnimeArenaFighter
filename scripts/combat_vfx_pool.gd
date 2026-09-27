@@ -62,12 +62,18 @@ func _process(delta: float) -> void:
         var eased: float = 1.0 - pow(1.0 - progress, 3.0)
         var root: Node3D = effect_nodes[i]
         root.scale = start_scales[i].lerp(target_scales[i], eased)
-        if effect_kinds[i] == "slash":
-            root.rotation.z += delta * 5.0
-        elif effect_kinds[i] == "aura":
-            root.rotation.y += delta * 2.4
-        else:
-            root.rotation.y += delta * 1.2
+        match effect_kinds[i]:
+            "slash", "dual_slash", "cleave":
+                root.rotation.z += delta * (7.2 if effect_kinds[i] == "dual_slash" else 4.2)
+            "arcane":
+                root.rotation.x += delta * 4.4
+                root.rotation.y += delta * 6.0
+            "plasma":
+                root.rotation.y += delta * 8.0
+            "aura":
+                root.rotation.y += delta * 2.4
+            _:
+                root.rotation.y += delta * 1.2
         if timers[i] <= 0.0:
             root.visible = false
 
@@ -91,6 +97,26 @@ func spawn_effect(kind: String, position: Vector3, direction: Vector3, color: Co
             start_scale = Vector3(0.18, 0.05, 0.32)
             target_scale = Vector3(2.2 + strength * 0.55, 0.16, 1.15 + strength * 0.20)
             root.rotation.z = -0.45
+        "dual_slash":
+            duration = 0.14
+            start_scale = Vector3(0.12, 0.035, 0.26)
+            target_scale = Vector3(1.65 + strength * 0.42, 0.10, 0.78 + strength * 0.14)
+            root.rotation.z = -0.72 if index % 2 == 0 else 0.72
+        "arcane":
+            duration = 0.27
+            start_scale = Vector3.ONE * 0.12
+            target_scale = Vector3.ONE * (1.20 + strength * 0.34)
+            root.rotation = Vector3(0.55, 0.25, -0.35)
+        "cleave":
+            duration = 0.22
+            start_scale = Vector3(0.24, 0.06, 0.34)
+            target_scale = Vector3(2.85 + strength * 0.70, 0.24, 1.30 + strength * 0.26)
+            root.rotation.z = -0.28
+        "plasma":
+            duration = 0.16
+            start_scale = Vector3(0.12, 0.06, 0.42)
+            target_scale = Vector3(1.35 + strength * 0.38, 0.18, 2.15 + strength * 0.55)
+            root.rotation.z = 0.18
         "dash":
             duration = 0.24
             start_scale = Vector3(0.22, 0.22, 0.30)

@@ -656,9 +656,23 @@ func _start_attack(data:Dictionary)->void:
     var anim_index: int = int(data.get("anim_index",0))
     var anim_speed: float = float(data.get("anim_speed",1.0))
     _play_animation(_attack_animation(anim_kind, anim_index), 0.06, anim_speed, true)
-    var fx_kind: String = "aura" if anim_kind == "ultimate" else ("charge" if anim_kind == "skill" and variant == 1 else "slash")
+    var fx_kind: String = _fighter_attack_fx_kind(anim_kind)
     var fx_strength: float = 1.75 if anim_kind == "ultimate" else (1.25 if anim_kind == "skill" or anim_kind == "heavy" else 0.75)
     combat_fx.emit(fx_kind, _combat_fx_origin(), -global_transform.basis.z, fighter_color, fx_strength)
+
+func _fighter_attack_fx_kind(anim_kind: String) -> String:
+    if anim_kind == "ultimate":
+        return "aura"
+    match variant:
+        0:
+            return "dual_slash"
+        1:
+            return "arcane"
+        2:
+            return "cleave"
+        3:
+            return "plasma"
+    return "slash"
 
 func _process_attack(delta:float)->void:
     attack_timer+=delta
@@ -669,7 +683,7 @@ func _process_attack(delta:float)->void:
         if attack_trail_timer <= 0.0:
             attack_trail_timer = 0.045
             var attack_strength: float = 1.45 if String(current_attack.get("anim_kind","")) in ["heavy","ultimate"] else 0.88
-            combat_fx.emit("slash", _combat_fx_origin(), -global_transform.basis.z, fighter_color, attack_strength)
+            combat_fx.emit(_fighter_attack_fx_kind(String(current_attack.get("anim_kind","light"))), _combat_fx_origin(), -global_transform.basis.z, fighter_color, attack_strength)
         if not attack_hit_done:
             _attempt_hit()
     if attack_timer>=startup+active+recovery: current_attack={}; attack_timer=0.0; state=State.IDLE
@@ -726,7 +740,7 @@ func _try_skill(index:int)->bool:
         0:
             skill_cooldowns[index]=4.0
             _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
-            combat_fx.emit("charge", _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.15)
+            combat_fx.emit(_fighter_attack_fx_kind("skill"), _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.15)
             var projectile=ProjectileScript.new()
             projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale)
             get_tree().current_scene.add_child(projectile)

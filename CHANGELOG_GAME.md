@@ -315,3 +315,23 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Uses one fullscreen CanvasItem shader and two scalar uniforms.
 - No extra particles, textures or per-hit scene allocation are required.
+
+## Update 19 — Fighter-specific combat VFX language
+
+### Added
+- Added four distinct pooled attack-FX profiles tied to fighter identity.
+- Succubus Assassin uses thin, fast alternating dual-slash arcs.
+- Arcane Mage uses rotating spherical arcane bursts.
+- Templar Knight uses broad, heavy cleave shapes.
+- Cyber Bunny uses elongated plasma/pulse streaks.
+
+### Changed
+- Active attack frames now keep each fighter's VFX profile instead of sharing one generic slash effect.
+- Skill startup effects follow the same fighter-specific visual language.
+- Ultimate startup still uses the larger aura treatment for cinematic readability.
+
+### Graphics
+- Fighter silhouette, animation and effect shape now reinforce the intended combat archetype instead of relying on color alone.
+
+### Optimization
+- All four new effect profiles reuse the same existing pooled nodes, meshes and materials; no extra runtime allocation path was introduced.
