@@ -1,17 +1,35 @@
 extends CanvasLayer
 
-signal start_requested(variant)
+signal start_requested(player_variant, enemy_variant, difficulty)
 signal restart_requested
 signal menu_requested
 
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
+const Roster = preload("res://scripts/character_data.gd")
 
 var player = null
 var enemy = null
+var selected_player: int = 0
+var selected_enemy: int = 2
+var selected_difficulty: int = 1
+
 var menu_ui: Control
 var game_ui: Control
 var result_ui: Control
 var pause_ui: Control
+var player_panel: Panel
+var enemy_panel: Panel
+var player_name: Label
+var enemy_name: Label
+var player_role: Label
+var enemy_role: Label
+var player_desc: Label
+var enemy_desc: Label
+var player_stats: Label
+var enemy_stats: Label
+var difficulty_button: Button
+var start_button: Button
+
 var player_hp: ProgressBar
 var enemy_hp: ProgressBar
 var stamina_bar: ProgressBar
@@ -50,14 +68,12 @@ func bind_fighters(p_player, p_enemy) -> void:
     result_ui.visible = false
     pause_ui.visible = false
     game_ui.visible = true
+    controls_ui.visible = true
     get_tree().paused = false
     set_combo(0)
 
 func set_combo(value: int) -> void:
-    if value <= 1:
-        combo_label.text = ""
-    else:
-        combo_label.text = "%d HIT COMBO" % value
+    combo_label.text = "" if value <= 1 else "%d HIT COMBO" % value
 
 func show_result(text_value: String) -> void:
     result_label.text = text_value
@@ -72,6 +88,7 @@ func show_main_menu() -> void:
     result_ui.visible = false
     pause_ui.visible = false
     get_tree().paused = false
+    _refresh_selection()
 
 func _build_menu() -> void:
     menu_ui = Control.new()
@@ -80,43 +97,161 @@ func _build_menu() -> void:
 
     var bg := ColorRect.new()
     bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    bg.color = Color(0.01,0.015,0.04,0.96)
+    bg.color = Color(0.008, 0.012, 0.028, 1.0)
     menu_ui.add_child(bg)
 
-    var title := _label("ANIME ARENA\nFIGHTER", Vector2(0,115), 64, Color(0.65,0.86,1.0))
-    title.size = Vector2(1920,180)
+    var glow_l := ColorRect.new()
+    glow_l.position = Vector2(0, 0)
+    glow_l.size = Vector2(620, 1080)
+    glow_l.color = Color(0.04, 0.18, 0.42, 0.18)
+    menu_ui.add_child(glow_l)
+
+    var glow_r := ColorRect.new()
+    glow_r.position = Vector2(1300, 0)
+    glow_r.size = Vector2(620, 1080)
+    glow_r.color = Color(0.42, 0.04, 0.10, 0.16)
+    menu_ui.add_child(glow_r)
+
+    var title := _label("BATTLE SETUP", Vector2(0, 45), 48, Color(0.88, 0.94, 1.0))
+    title.size = Vector2(1920, 70)
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_ui.add_child(title)
 
-    var subtitle := _label("ANDROID 3D ARENA BATTLE", Vector2(0,285), 22, Color(0.62,0.68,0.78))
-    subtitle.size = Vector2(1920,40)
+    var subtitle := _label("CHOOSE YOUR FIGHTER  •  CHOOSE YOUR OPPONENT", Vector2(0, 105), 20, Color(0.46, 0.58, 0.72))
+    subtitle.size = Vector2(1920, 40)
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_ui.add_child(subtitle)
 
-    var choose := _label("SELECT FIGHTER", Vector2(0,405), 30, Color.WHITE)
-    choose.size = Vector2(1920,50)
-    choose.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    menu_ui.add_child(choose)
+    player_panel = _selection_panel(Vector2(105, 175), Vector2(700, 535), Color(0.08, 0.36, 0.76))
+    menu_ui.add_child(player_panel)
+    enemy_panel = _selection_panel(Vector2(1115, 175), Vector2(700, 535), Color(0.76, 0.08, 0.18))
+    menu_ui.add_child(enemy_panel)
 
-    var azure := _menu_button("AZURE FANG", Vector2(525,500), Vector2(390,105), Color(0.08,0.34,0.72))
-    azure.pressed.connect(func(): start_requested.emit(0))
-    menu_ui.add_child(azure)
+    var your := _label("YOUR FIGHTER", Vector2(135, 195), 24, Color(0.55, 0.80, 1.0))
+    menu_ui.add_child(your)
+    var foe := _label("OPPONENT", Vector2(1145, 195), 24, Color(1.0, 0.60, 0.64))
+    menu_ui.add_child(foe)
 
-    var crimson := _menu_button("CRIMSON EDGE", Vector2(1005,500), Vector2(390,105), Color(0.65,0.08,0.16))
-    crimson.pressed.connect(func(): start_requested.emit(1))
-    menu_ui.add_child(crimson)
+    player_name = _label("", Vector2(135, 245), 38, Color.WHITE)
+    player_name.size = Vector2(620, 58)
+    menu_ui.add_child(player_name)
+    enemy_name = _label("", Vector2(1145, 245), 38, Color.WHITE)
+    enemy_name.size = Vector2(620, 58)
+    menu_ui.add_child(enemy_name)
 
-    var hint := _label("Touch controls • Lock-on • Combos • Skills • Ultimate", Vector2(0,690), 22, Color(0.52,0.60,0.72))
-    hint.size = Vector2(1920,40)
-    hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    menu_ui.add_child(hint)
+    player_role = _label("", Vector2(135, 310), 20, Color(0.55, 0.76, 1.0))
+    menu_ui.add_child(player_role)
+    enemy_role = _label("", Vector2(1145, 310), 20, Color(1.0, 0.62, 0.62))
+    menu_ui.add_child(enemy_role)
 
-    var fps30 := _menu_button("30 FPS", Vector2(720,790), Vector2(220,70), Color(0.14,0.18,0.26))
-    fps30.pressed.connect(func(): Engine.max_fps = 30)
-    menu_ui.add_child(fps30)
-    var fps60 := _menu_button("60 FPS", Vector2(980,790), Vector2(220,70), Color(0.14,0.18,0.26))
-    fps60.pressed.connect(func(): Engine.max_fps = 60)
-    menu_ui.add_child(fps60)
+    player_desc = _label("", Vector2(135, 365), 18, Color(0.72, 0.77, 0.84))
+    player_desc.size = Vector2(600, 90)
+    player_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    menu_ui.add_child(player_desc)
+    enemy_desc = _label("", Vector2(1145, 365), 18, Color(0.72, 0.77, 0.84))
+    enemy_desc.size = Vector2(600, 90)
+    enemy_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    menu_ui.add_child(enemy_desc)
+
+    player_stats = _label("", Vector2(135, 470), 20, Color(0.88, 0.92, 0.98))
+    player_stats.size = Vector2(620, 120)
+    menu_ui.add_child(player_stats)
+    enemy_stats = _label("", Vector2(1145, 470), 20, Color(0.88, 0.92, 0.98))
+    enemy_stats.size = Vector2(620, 120)
+    menu_ui.add_child(enemy_stats)
+
+    var vs := _label("VS", Vector2(0, 330), 72, Color(1.0, 0.82, 0.22))
+    vs.size = Vector2(1920, 100)
+    vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    menu_ui.add_child(vs)
+
+    _build_roster_buttons(true)
+    _build_roster_buttons(false)
+
+    difficulty_button = _menu_button("AI: NORMAL", Vector2(805, 645), Vector2(310, 72), Color(0.16, 0.20, 0.30))
+    difficulty_button.pressed.connect(_cycle_difficulty)
+    menu_ui.add_child(difficulty_button)
+
+    start_button = _menu_button("START BATTLE", Vector2(700, 760), Vector2(520, 105), Color(0.08, 0.46, 0.80))
+    start_button.add_theme_font_size_override("font_size", 30)
+    start_button.pressed.connect(func(): start_requested.emit(selected_player, selected_enemy, selected_difficulty))
+    menu_ui.add_child(start_button)
+
+    var footer := _label("Landscape 16:9  •  4 fighters  •  Touch controls  •  1v1 arena", Vector2(0, 920), 18, Color(0.38, 0.46, 0.58))
+    footer.size = Vector2(1920, 40)
+    footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    menu_ui.add_child(footer)
+
+func _selection_panel(pos: Vector2, sz: Vector2, accent: Color) -> Panel:
+    var p := Panel.new()
+    p.position = pos
+    p.size = sz
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color(0.025, 0.035, 0.060, 0.94)
+    style.border_width_left = 2
+    style.border_width_top = 2
+    style.border_width_right = 2
+    style.border_width_bottom = 2
+    style.border_color = Color(accent.r, accent.g, accent.b, 0.55)
+    style.corner_radius_top_left = 22
+    style.corner_radius_top_right = 22
+    style.corner_radius_bottom_left = 22
+    style.corner_radius_bottom_right = 22
+    p.add_theme_stylebox_override("panel", style)
+    return p
+
+func _build_roster_buttons(for_player: bool) -> void:
+    var x_start: float = 120.0 if for_player else 1130.0
+    var y: float = 600.0
+    for i in range(Roster.count()):
+        var data: Dictionary = Roster.get_data(i)
+        var b := _menu_button(data.short, Vector2(x_start + i * 160.0, y), Vector2(140, 92), data.color.darkened(0.45))
+        b.tooltip_text = data.name
+        var index := i
+        if for_player:
+            b.pressed.connect(func():
+                selected_player = index
+                _refresh_selection()
+            )
+        else:
+            b.pressed.connect(func():
+                selected_enemy = index
+                _refresh_selection()
+            )
+        menu_ui.add_child(b)
+
+func _refresh_selection() -> void:
+    if player_name == null:
+        return
+    var pd: Dictionary = Roster.get_data(selected_player)
+    var ed: Dictionary = Roster.get_data(selected_enemy)
+    player_name.text = pd.name
+    enemy_name.text = ed.name
+    player_role.text = pd.role
+    enemy_role.text = ed.role
+    player_desc.text = pd.description
+    enemy_desc.text = ed.description
+    player_stats.text = _stats_text(pd)
+    enemy_stats.text = _stats_text(ed)
+
+func _stats_text(data: Dictionary) -> String:
+    return "SPEED   %s\nPOWER   %s\nRANGE   %s\nDEFENSE %s\n\n%s" % [
+        _pips(int(data.speed)),
+        _pips(int(data.power_stat)),
+        _pips(int(data.range)),
+        _pips(int(data.defense_stat)),
+        " • ".join(data.skills)
+    ]
+
+func _pips(value: int) -> String:
+    var out := ""
+    for i in range(5):
+        out += "◆" if i < value else "◇"
+    return out
+
+func _cycle_difficulty() -> void:
+    selected_difficulty = (selected_difficulty + 1) % 3
+    difficulty_button.text = ["AI: EASY", "AI: NORMAL", "AI: HARD"][selected_difficulty]
 
 func _build_game_ui() -> void:
     game_ui = Control.new()
@@ -166,8 +301,7 @@ func _build_game_ui() -> void:
     _add_action("DODGE","dodge",Vector2(1410,840),Vector2(140,95))
     _add_action("DASH","dash",Vector2(1260,865),Vector2(125,85))
     _add_action("JUMP","jump",Vector2(1735,880),Vector2(130,88))
-    _add_action("BLOCK","block",Vector2(1420,690),Vector2(135,95),true)
-
+    _add_action("BLOCK","block",Vector2(1420,690),Vector2(135,95))
     _add_action("S1","skill_1",Vector2(1110,690),Vector2(105,82))
     _add_action("S2","skill_2",Vector2(1218,610),Vector2(105,82))
     _add_action("S3","skill_3",Vector2(1328,585),Vector2(105,82))
@@ -195,7 +329,7 @@ func _build_result() -> void:
         restart_requested.emit()
     )
     result_ui.add_child(retry)
-    var menu := _menu_button("MENU",Vector2(980,610),Vector2(280,90),Color(0.24,0.25,0.30))
+    var menu := _menu_button("CHARACTER SELECT",Vector2(980,610),Vector2(360,90),Color(0.24,0.25,0.30))
     menu.pressed.connect(func(): menu_requested.emit())
     result_ui.add_child(menu)
 
@@ -216,7 +350,7 @@ func _build_pause() -> void:
     resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
     resume.pressed.connect(_toggle_pause)
     pause_ui.add_child(resume)
-    var menu := _menu_button("MAIN MENU",Vector2(790,585),Vector2(340,85),Color(0.24,0.25,0.30))
+    var menu := _menu_button("CHARACTER SELECT",Vector2(760,585),Vector2(400,85),Color(0.24,0.25,0.30))
     menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
     menu.pressed.connect(func():
         get_tree().paused=false
@@ -261,7 +395,7 @@ func _label(text_value: String, pos: Vector2, font_size: int, color: Color) -> L
     l.add_theme_color_override("font_color",color)
     return l
 
-func _style(color: Color, alpha := 0.82) -> StyleBoxFlat:
+func _style(color: Color, alpha: float = 0.82) -> StyleBoxFlat:
     var s := StyleBoxFlat.new()
     s.bg_color = Color(color.r,color.g,color.b,alpha)
     s.corner_radius_top_left=18
@@ -275,7 +409,7 @@ func _style(color: Color, alpha := 0.82) -> StyleBoxFlat:
     s.border_color=color.lightened(0.25)
     return s
 
-func _action_button(text_value: String, action: String, pos: Vector2, sz: Vector2, hold := false) -> Button:
+func _action_button(text_value: String, action: String, pos: Vector2, sz: Vector2) -> Button:
     var b := Button.new()
     b.text=text_value
     b.position=pos
@@ -289,9 +423,8 @@ func _action_button(text_value: String, action: String, pos: Vector2, sz: Vector
         b.button_up.connect(func(): Input.action_release(action))
     return b
 
-func _add_action(text_value: String, action: String, pos: Vector2, sz: Vector2, hold := false) -> void:
-    var b := _action_button(text_value,action,pos,sz,hold)
-    controls_ui.add_child(b)
+func _add_action(text_value: String, action: String, pos: Vector2, sz: Vector2) -> void:
+    controls_ui.add_child(_action_button(text_value,action,pos,sz))
 
 func _menu_button(text_value: String, pos: Vector2, sz: Vector2, color: Color) -> Button:
     var b := Button.new()
@@ -299,7 +432,8 @@ func _menu_button(text_value: String, pos: Vector2, sz: Vector2, color: Color) -
     b.position=pos
     b.size=sz
     b.focus_mode=Control.FOCUS_NONE
-    b.add_theme_font_size_override("font_size",25)
+    b.add_theme_font_size_override("font_size",24)
     b.add_theme_stylebox_override("normal",_style(color,0.86))
+    b.add_theme_stylebox_override("hover",_style(color.lightened(0.10),0.94))
     b.add_theme_stylebox_override("pressed",_style(color.lightened(0.18),1.0))
     return b

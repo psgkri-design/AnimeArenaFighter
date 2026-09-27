@@ -1,5 +1,5 @@
 ; Engine configuration file.
-; Anime Arena Fighter prototype
+; Anime Arena Fighter
 config_version=5
 
 [application]
@@ -13,7 +13,7 @@ window/size/viewport_height=1080
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-window/handheld/orientation=3
+window/handheld/orientation=4
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

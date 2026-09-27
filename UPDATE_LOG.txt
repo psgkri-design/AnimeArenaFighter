@@ -21,22 +21,29 @@ VERSION 0.1.0 — 2026-09-27
 - Produced first successful Android APK build.
 
 ==================================================
-VERSION 0.2.0 — IN DEVELOPMENT — 2026-09-27
+VERSION 0.2.0 — 2026-09-27 — CHARACTER SELECT / ROSTER UPDATE
 ==================================================
-Planned / currently implementing:
-- Force landscape 16:9 presentation.
-- Expand roster from 2 to 4 fighters.
-- Separate PLAYER and ENEMY character selection.
-- New character-select interface with portraits/cards, stats and role descriptions.
-- Four archetypes:
-  1. Succubus Assassin
-  2. Arcane Mage
-  3. Templar Knight
-  4. Cyber Bunny Operative
-- Give each fighter different stats and combat identity.
-- Improve procedural character silhouettes and costumes.
-- Improve arena presentation and UI polish.
-- Continue replacing prototype visuals with higher-quality, license-safe assets.
+- Forced mobile orientation to sensor-landscape only.
+- Added runtime landscape enforcement through DisplayServer.
+- Added permanent fighter roster data file.
+- Expanded roster to four fighters:
+  1. Succubus Assassin — rushdown / air mobility.
+  2. Arcane Mage — ranged zoning / control.
+  3. Templar Knight — tank / power.
+  4. Cyber Bunny — mobility / burst.
+- Added unique health, stamina, speed, power and defense values per fighter.
+- Added variant-specific skill damage profiles and combat tuning.
+- Added visibly different procedural character silhouettes and outfit pieces:
+  horns, demon wings/tail, mage hat/staff, templar cape/armor/weapon,
+  bunny ears/techwear/orange accents.
+- Rebuilt main menu as a landscape BATTLE SETUP screen.
+- Added independent YOUR FIGHTER and OPPONENT selection.
+- Added fighter role, description, stats and skill-list panels.
+- Added Easy / Normal / Hard AI selector.
+- Added Character Select return path from pause and results screens.
+- Increased arena decorative pillar count and refined lighting/background values.
+- Updated match startup to preserve selected player, enemy and AI difficulty.
+- Next target: integrate higher-quality licensed external 3D character assets and animation sets.
 
 ==================================================
 RULE FOR FUTURE UPDATES

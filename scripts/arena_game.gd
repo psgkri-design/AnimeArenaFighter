@@ -8,12 +8,16 @@ var hud
 var camera_rig
 var player = null
 var enemy = null
-var selected_variant := 0
-var match_running := false
+var selected_player_variant: int = 0
+var selected_enemy_variant: int = 2
+var selected_difficulty: int = 1
+var match_running: bool = false
 
 func _ready() -> void:
     randomize()
     Engine.max_fps = 60
+    if DisplayServer.has_feature(DisplayServer.FEATURE_ORIENTATION):
+        DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
     _build_world()
     _build_arena()
 
@@ -33,10 +37,10 @@ func _build_world() -> void:
     var environment_node := WorldEnvironment.new()
     var environment := Environment.new()
     environment.background_mode = Environment.BG_COLOR
-    environment.background_color = Color(0.018, 0.026, 0.065)
+    environment.background_color = Color(0.012, 0.018, 0.045)
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    environment.ambient_light_color = Color(0.22, 0.28, 0.42)
-    environment.ambient_light_energy = 0.62
+    environment.ambient_light_color = Color(0.20, 0.27, 0.43)
+    environment.ambient_light_energy = 0.65
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     environment_node.environment = environment
     add_child(environment_node)
@@ -51,8 +55,8 @@ func _build_world() -> void:
 
     var fill := DirectionalLight3D.new()
     fill.rotation_degrees = Vector3(-25, 145, 0)
-    fill.light_color = Color(1.0, 0.25, 0.34)
-    fill.light_energy = 0.34
+    fill.light_color = Color(1.0, 0.20, 0.32)
+    fill.light_energy = 0.38
     fill.shadow_enabled = false
     add_child(fill)
 
@@ -76,9 +80,9 @@ func _build_arena() -> void:
     floor_mesh.mesh = cylinder
     floor_mesh.position.y = -0.3
     var floor_mat := StandardMaterial3D.new()
-    floor_mat.albedo_color = Color(0.055, 0.07, 0.105)
-    floor_mat.metallic = 0.32
-    floor_mat.roughness = 0.58
+    floor_mat.albedo_color = Color(0.045, 0.058, 0.095)
+    floor_mat.metallic = 0.36
+    floor_mat.roughness = 0.50
     floor_mesh.material_override = floor_mat
     floor_body.add_child(floor_mesh)
 
@@ -90,17 +94,17 @@ func _build_arena() -> void:
     floor_collision.position.y = -0.3
     floor_body.add_child(floor_collision)
 
-    _add_arena_disc(arena_root, 20.0, -0.015, Color(0.04, 0.11, 0.20), 0.03)
-    _add_arena_disc(arena_root, 12.0, 0.01, Color(0.06, 0.14, 0.26), 0.025)
-    _add_arena_disc(arena_root, 4.2, 0.035, Color(0.10, 0.20, 0.33), 0.02)
+    _add_arena_disc(arena_root, 20.0, -0.015, Color(0.03, 0.09, 0.19), 0.03)
+    _add_arena_disc(arena_root, 12.0, 0.01, Color(0.06, 0.12, 0.24), 0.025)
+    _add_arena_disc(arena_root, 4.2, 0.035, Color(0.10, 0.20, 0.34), 0.02)
 
     for i in range(16):
         var angle := TAU * float(i) / 16.0
         var pos := Vector3(cos(angle) * 25.2, 1.75, sin(angle) * 25.2)
         _add_boundary_segment(arena_root, pos, angle)
 
-    for i in range(8):
-        var angle := TAU * float(i) / 8.0 + TAU / 16.0
+    for i in range(12):
+        var angle := TAU * float(i) / 12.0 + TAU / 24.0
         var pos := Vector3(cos(angle) * 21.8, 1.7, sin(angle) * 21.8)
         _add_pillar(arena_root, pos, i % 2 == 0)
 
@@ -138,41 +142,36 @@ func _add_boundary_segment(parent: Node3D, pos: Vector3, angle: float) -> void:
 func _add_pillar(parent: Node3D, pos: Vector3, blue: bool) -> void:
     var pillar := MeshInstance3D.new()
     var mesh := CylinderMesh.new()
-    mesh.top_radius = 0.6
-    mesh.bottom_radius = 0.9
+    mesh.top_radius = 0.55
+    mesh.bottom_radius = 0.85
     mesh.height = 3.4
     mesh.radial_segments = 8
     pillar.mesh = mesh
     pillar.position = pos
     var color := Color(0.08, 0.5, 1.0) if blue else Color(1.0, 0.12, 0.26)
     var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.05, 0.06, 0.09)
+    mat.albedo_color = Color(0.035, 0.045, 0.075)
     mat.emission_enabled = true
     mat.emission = color
-    mat.emission_energy_multiplier = 1.8
+    mat.emission_energy_multiplier = 1.75
     pillar.material_override = mat
     parent.add_child(pillar)
-    var light := OmniLight3D.new()
-    light.position = pos + Vector3.UP * 1.5
-    light.light_color = color
-    light.light_energy = 2.2
-    light.omni_range = 5.0
-    light.shadow_enabled = false
-    parent.add_child(light)
 
-func _start_match(variant: int) -> void:
-    selected_variant = variant
+func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> void:
+    selected_player_variant = player_variant
+    selected_enemy_variant = enemy_variant
+    selected_difficulty = difficulty
     _destroy_fighters()
 
     player = FighterScript.new()
     player.name = "Player"
-    player.configure(selected_variant, false, 1)
+    player.configure(selected_player_variant, false, selected_difficulty)
     add_child(player)
     player.global_position = Vector3(0, 0.05, 5.0)
 
     enemy = FighterScript.new()
     enemy.name = "EnemyAI"
-    enemy.configure(1 - selected_variant, true, 1)
+    enemy.configure(selected_enemy_variant, true, selected_difficulty)
     add_child(enemy)
     enemy.global_position = Vector3(0, 0.05, -5.0)
 
@@ -196,7 +195,7 @@ func _connect_fighter(fighter) -> void:
     fighter.perfect_parry.connect(_on_perfect_parry)
 
 func _restart_match() -> void:
-    _start_match(selected_variant)
+    _start_match(selected_player_variant, selected_enemy_variant, selected_difficulty)
 
 func _return_to_menu() -> void:
     match_running = false
@@ -217,10 +216,7 @@ func _on_knocked_out(loser) -> void:
         return
     match_running = false
     camera_rig.add_shake(2.0)
-    if loser == enemy:
-        hud.show_result("K.O.\nVICTORY")
-    else:
-        hud.show_result("K.O.\nDEFEAT")
+    hud.show_result("K.O.\nVICTORY" if loser == enemy else "K.O.\nDEFEAT")
 
 func _on_impact(position: Vector3, strength: float, color: Color) -> void:
     camera_rig.add_shake(strength)
@@ -232,7 +228,7 @@ func _on_ultimate_started(attacker, victim) -> void:
 
 func _on_perfect_evade(fighter) -> void:
     camera_rig.add_shake(0.55)
-    _spawn_impact_vfx(fighter.global_position + Vector3.UP * 1.0, 0.9, Color(0.7, 0.9, 1.0))
+    _spawn_impact_vfx(fighter.global_position + Vector3.UP, 0.9, Color(0.7, 0.9, 1.0))
 
 func _on_perfect_parry(defender, _attacker) -> void:
     camera_rig.add_shake(1.2)
@@ -242,7 +238,6 @@ func _spawn_impact_vfx(position: Vector3, strength: float, color: Color) -> void
     var root := Node3D.new()
     root.global_position = position
     add_child(root)
-
     var core := MeshInstance3D.new()
     var sphere := SphereMesh.new()
     sphere.radius = 0.25
@@ -253,7 +248,6 @@ func _spawn_impact_vfx(position: Vector3, strength: float, color: Color) -> void
     mat.set_shader_parameter("energy_color", color)
     core.material_override = mat
     root.add_child(core)
-
     for i in range(7):
         var ray := MeshInstance3D.new()
         var box := BoxMesh.new()
@@ -263,11 +257,10 @@ func _spawn_impact_vfx(position: Vector3, strength: float, color: Color) -> void
         ray.rotation = Vector3(randf_range(-0.8, 0.8), randf_range(0.0, TAU), randf_range(-0.8, 0.8))
         ray.position = -ray.transform.basis.z * 0.45
         root.add_child(ray)
-
     root.scale = Vector3.ONE * 0.25
     var tween := create_tween()
     tween.set_parallel(true)
-    tween.tween_property(root, "scale", Vector3.ONE * (0.8 + strength * 0.38), 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    tween.tween_property(root, "scale", Vector3.ONE * (0.8 + strength * 0.38), 0.10)
     tween.tween_property(root, "rotation:y", randf_range(-1.0, 1.0), 0.18)
     tween.set_parallel(false)
     tween.tween_interval(0.08)
