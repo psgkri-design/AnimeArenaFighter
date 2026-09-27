@@ -115,6 +115,8 @@ func _run() -> void:
             _check(game.player.left_foot_bone >= 0 and game.player.right_foot_bone >= 0, "left/right foot bones resolved")
             _check(game.player.left_foot_ik != null and game.player.right_foot_ik != null, "foot IK chains created")
             _check(game.player.left_foot_target != null and game.player.right_foot_target != null, "foot IK targets created")
+            _check(game.player.ground_shadow != null, "ground contact shadow created")
+            _check(game.player.visual_quality == 1, "fighter visual quality synced to MEDIUM")
 
         game.player.is_ai = false
         game.enemy.is_ai = false

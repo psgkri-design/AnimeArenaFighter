@@ -73,6 +73,11 @@ var right_foot_target: Node3D = null
 var foot_ik_timer: float = 0.0
 var left_foot_clearance: float = -1.0
 var right_foot_clearance: float = -1.0
+var visual_quality: int = 1
+var ground_shadow: MeshInstance3D = null
+var ground_shadow_material: ShaderMaterial = null
+var ground_shadow_timer: float = 0.0
+var ground_shadow_y: float = 0.03
 var weapon_attachment_count: int = 0
 var last_animation: StringName = &""
 var hit_reaction_toggle: bool = false
@@ -110,6 +115,7 @@ func _ready() -> void:
     cs.position.y = 0.92
     add_child(cs)
     _build_model()
+    _setup_ground_shadow()
     stats_changed.emit(self)
 
 func _build_model() -> void:
@@ -235,6 +241,69 @@ func _stylize_external_materials(node: Node) -> void:
                     mesh_instance.set_surface_override_material(surface_index, stylized)
     for child in node.get_children():
         _stylize_external_materials(child)
+
+func set_visual_quality(level: int) -> void:
+    visual_quality = clampi(level,0,2)
+    if ground_shadow_material != null:
+        ground_shadow_material.set_shader_parameter("strength", _ground_shadow_strength())
+
+func _ground_shadow_strength() -> float:
+    match visual_quality:
+        0: return 0.34
+        1: return 0.18
+        _: return 0.11
+
+func _setup_ground_shadow() -> void:
+    if name == "PreviewFighter":
+        return
+    ground_shadow = MeshInstance3D.new()
+    ground_shadow.name = "GroundContactShadow"
+    var quad := QuadMesh.new()
+    quad.size = Vector2(1.65,1.25)
+    ground_shadow.mesh = quad
+    ground_shadow.rotation.x = -PI * 0.5
+    ground_shadow.top_level = true
+    ground_shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    ground_shadow_material = ShaderMaterial.new()
+    ground_shadow_material.shader = load("res://shaders/blob_shadow.gdshader")
+    ground_shadow_material.set_shader_parameter("strength", _ground_shadow_strength())
+    ground_shadow.material_override = ground_shadow_material
+    add_child(ground_shadow)
+    ground_shadow.global_position = Vector3(global_position.x, ground_shadow_y, global_position.z)
+
+func _update_ground_shadow(delta: float) -> void:
+    if ground_shadow == null:
+        return
+
+    ground_shadow.global_position = Vector3(global_position.x, ground_shadow_y, global_position.z)
+    ground_shadow_timer -= delta
+    if ground_shadow_timer > 0.0:
+        return
+    ground_shadow_timer = 0.08
+
+    var query := PhysicsRayQueryParameters3D.create(
+        global_position + Vector3.UP * 1.2,
+        global_position + Vector3.DOWN * 5.2,
+        1
+    )
+    query.exclude = [get_rid()]
+    var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+    if result.is_empty():
+        ground_shadow.visible = false
+        return
+
+    var hit_position: Vector3 = result["position"]
+    ground_shadow_y = hit_position.y + 0.025
+    ground_shadow.global_position = Vector3(global_position.x, ground_shadow_y, global_position.z)
+    ground_shadow.visible = true
+
+    var height: float = clampf(global_position.y - hit_position.y,0.0,4.0)
+    var footprint_scale: float = 1.0 + height * 0.07
+    ground_shadow.scale = Vector3(footprint_scale,footprint_scale,1.0)
+    if ground_shadow_material != null:
+        var fade: float = clampf(1.0 - height / 4.2,0.18,1.0)
+        ground_shadow_material.set_shader_parameter("strength", _ground_shadow_strength() * fade)
 
 func _setup_foot_ik() -> void:
     if skeleton == null or left_foot_bone < 0 or right_foot_bone < 0:
@@ -477,6 +546,7 @@ func _update_visuals(delta: float) -> void:
     _sync_animation()
     _apply_combat_look_at()
     _update_foot_ik(delta)
+    _update_ground_shadow(delta)
 
 func _decorate_external_model() -> void:
     match variant:

@@ -664,3 +664,26 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Ground sampling runs at 20 Hz rather than every rendered frame.
 - Maximum four FABRIK iterations per leg and only two short collision-layer-1 raycasts are used per sample.
 - CI validates both foot bones, IK chains and target nodes on the imported rig.
+
+
+## Update 36 — Quality-scaled fighter contact shadows
+
+### Added
+- Added one soft ground-contact blob shadow per combat fighter using a lightweight unshaded spatial shader.
+- Added fighter visual-quality synchronization from the global LOW / MEDIUM / HIGH preset.
+- Added periodic ground sampling so contact shadows stay on the arena surface during jumps and launch reactions.
+
+### Changed
+- LOW uses a stronger contact shadow to compensate for disabled realtime directional shadows.
+- MEDIUM/HIGH use progressively subtler contact shadows so they support rather than duplicate realtime shadows.
+- Shadow footprint grows slightly and fades as the fighter rises away from the ground.
+
+### Graphics
+- Fighters remain visually grounded during jump/launch/knockdown sequences, especially on LOW devices.
+- Character Select preview skips the combat blob shadow to keep the preview stage clean.
+
+### Optimization
+- One transparent unshaded quad per fighter; it never casts shadows or receives fog/shadow calculations.
+- Ground raycast runs at 12.5 Hz rather than every frame.
+- No texture asset is required; the soft ellipse is generated analytically in the shader.
+- CI validates combat shadow creation and MEDIUM quality synchronization.

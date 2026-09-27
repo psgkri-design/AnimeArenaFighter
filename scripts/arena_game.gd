@@ -409,6 +409,7 @@ func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> v
     player.name = "Player"
     player.configure(selected_player_variant, false, selected_difficulty)
     player.projectile_pool = projectile_pool
+    player.set_visual_quality(quality_manager.current_level)
     add_child(player)
     player.global_position = Vector3(0, 0.05, 5.0)
 
@@ -416,6 +417,7 @@ func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> v
     enemy.name = "EnemyAI"
     enemy.configure(selected_enemy_variant, true, selected_difficulty)
     enemy.projectile_pool = projectile_pool
+    enemy.set_visual_quality(quality_manager.current_level)
     add_child(enemy)
     enemy.global_position = Vector3(0, 0.05, -5.0)
 
@@ -619,3 +621,7 @@ func _on_quality_requested(level: int) -> void:
         quality_manager.apply_preset(self, level, vfx_pool)
     if projectile_pool != null:
         projectile_pool.set_quality(level)
+    if is_instance_valid(player):
+        player.set_visual_quality(level)
+    if is_instance_valid(enemy):
+        enemy.set_visual_quality(level)
