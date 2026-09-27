@@ -62,6 +62,7 @@ var skeleton: Skeleton3D = null
 var head_bone: int = -1
 var chest_bone: int = -1
 var hand_bone: int = -1
+var weapon_attachment_count: int = 0
 var last_animation: StringName = &""
 var hit_reaction_toggle: bool = false
 var visual_phase: float = 0.0
@@ -143,8 +144,49 @@ func _try_build_external_model() -> bool:
         head_bone = skeleton.find_bone("head")
         chest_bone = skeleton.find_bone("chest")
         hand_bone = skeleton.find_bone("handslot.r")
+        _attach_external_weapons()
     _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
+
+func _attach_external_weapons() -> void:
+    if skeleton == null:
+        return
+    match variant:
+        0:
+            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", "handslot.r", Vector3.ZERO)
+            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", "handslot.l", Vector3(0.0, PI, 0.0))
+        1:
+            _attach_weapon("res://assets/kaykit/weapons/staff.gltf", "handslot.r", Vector3.ZERO)
+        2:
+            _attach_weapon("res://assets/kaykit/weapons/sword_2handed_color.gltf", "handslot.r", Vector3.ZERO)
+        3:
+            _attach_weapon("res://assets/kaykit/weapons/sword_1handed.gltf", "handslot.r", Vector3.ZERO)
+
+func _attach_weapon(path: String, bone_name: String, local_rotation: Vector3) -> void:
+    if not ResourceLoader.exists(path):
+        return
+    var resource: Resource = load(path)
+    if not (resource is PackedScene):
+        return
+    var bone_index: int = skeleton.find_bone(bone_name)
+    if bone_index < 0:
+        return
+
+    var attachment := BoneAttachment3D.new()
+    attachment.name = "Weapon_%s" % bone_name.replace(".", "_")
+    attachment.bone_name = bone_name
+    skeleton.add_child(attachment)
+
+    var weapon_scene := resource as PackedScene
+    var weapon := weapon_scene.instantiate() as Node3D
+    if weapon == null:
+        attachment.queue_free()
+        return
+    weapon.name = "WeaponVisual"
+    weapon.rotation = local_rotation
+    attachment.add_child(weapon)
+    _stylize_external_materials(weapon)
+    weapon_attachment_count += 1
 
 func _stylize_external_materials(node: Node) -> void:
     if node is MeshInstance3D:

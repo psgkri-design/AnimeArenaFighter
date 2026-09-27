@@ -22,3 +22,16 @@ All third-party content used by Anime Arena Fighter must have a clear redistribu
 ## Project rule
 
 Do not add models, textures, animation clips, audio, logos or other assets extracted from commercial games or protected anime franchises. Visual references may inform quality and style only.
+
+
+### KayKit weapon/accessory meshes used
+
+The same KayKit Character Pack: Adventures 1.0 CC0 license also covers the weapon assets integrated by Android CI:
+
+- `dagger.gltf` + `dagger.bin` — Succubus Assassin dual daggers.
+- `staff.gltf` + `staff.bin` — Arcane Mage staff.
+- `sword_2handed_color.gltf` + `sword_2handed_color.bin` — Templar Knight heavy sword.
+- `sword_1handed.gltf` + `sword_1handed.bin` — Cyber Bunny blade.
+- Shared KayKit texture atlases: `rogue_texture.png`, `mage_texture.png`, `knight_texture.png`.
+
+These are fetched from the pack's `Assets/gltf` directory during CI and attached to the rig's authored `handslot.l/r` bones.

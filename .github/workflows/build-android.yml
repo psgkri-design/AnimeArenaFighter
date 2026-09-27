@@ -23,6 +23,15 @@ jobs:
           curl -fL "$BASE/Knight.glb" -o assets/kaykit/Knight.glb
           curl -fL "$BASE/Rogue.glb" -o assets/kaykit/Rogue.glb
           curl -fL "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/LICENSE.txt" -o assets/kaykit/KAYKIT_LICENSE.txt
+          mkdir -p assets/kaykit/weapons
+          ASSET_BASE="https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Assets/gltf"
+          for NAME in dagger staff sword_2handed_color sword_1handed; do
+            curl -fL "$ASSET_BASE/$NAME.gltf" -o "assets/kaykit/weapons/$NAME.gltf"
+            curl -fL "$ASSET_BASE/$NAME.bin" -o "assets/kaykit/weapons/$NAME.bin"
+          done
+          curl -fL "$ASSET_BASE/rogue_texture.png" -o assets/kaykit/weapons/rogue_texture.png
+          curl -fL "$ASSET_BASE/mage_texture.png" -o assets/kaykit/weapons/mage_texture.png
+          curl -fL "$ASSET_BASE/knight_texture.png" -o assets/kaykit/weapons/knight_texture.png
 
       - name: Create debug keystore
         run: |

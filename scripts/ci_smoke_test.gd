@@ -82,6 +82,7 @@ func _run() -> void:
         _check(not game.hud.menu_ui.visible and game.hud.game_ui.visible, "battle HUD active")
         _check(game.player.variant == variant, "selected player data propagated")
         _check(game.enemy.variant == enemy_variant, "selected enemy data propagated")
+        _check(game.player.weapon_attachment_count >= 1, "fighter %d has bone-attached weapon asset" % variant)
         _audit_animations(game.player, "fighter_%d" % variant)
         if variant == 0:
             _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")

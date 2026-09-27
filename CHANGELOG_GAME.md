@@ -239,3 +239,26 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Skeleton/bone references are resolved once during model setup.
 - Procedural look-at touches only two bones and avoids full-body IK solvers on the flat arena.
 - CI now verifies head, chest and right-hand-slot bones before APK publication.
+
+## Update 15 — Rigged weapon asset integration
+
+### Added
+- Integrated textured CC0 KayKit weapon meshes from the same character pack used by the fighter bases.
+- Succubus Assassin now uses two rig-attached dagger assets.
+- Arcane Mage now uses a rig-attached staff asset.
+- Templar Knight now uses a rig-attached colored two-handed sword asset.
+- Cyber Bunny now uses a rig-attached one-handed blade asset.
+- Added Android CI download/import for weapon glTF, bin and shared texture dependencies.
+
+### Changed
+- Weapons are attached to the imported `handslot.l/r` bones through BoneAttachment3D, so they follow authored combat animations instead of floating at fixed CharacterBody coordinates.
+- Weapon materials receive the same toon/specular/rim stylization pass as character materials.
+
+### Graphics
+- Replaced prototype weapon presentation with authored textured accessory meshes designed for the same character pack/scale.
+
+### Fixed
+- CI smoke-test now requires every fighter variant to resolve at least one bone-attached weapon asset.
+
+### Optimization
+- Weapon assets share the KayKit texture atlases and are loaded once with the fighter scene; no runtime spawning occurs per attack.
