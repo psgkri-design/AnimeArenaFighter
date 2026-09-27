@@ -152,3 +152,20 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed — Update 09 hotfix
 - Renamed a Character Select local variable that collided with GDScript's reserved `class_name` keyword and prevented the preview HUD script from compiling.
+
+## Update 10 — Stylized character material pass
+
+### Graphics
+- Converted imported rigged-character materials at runtime to Godot's toon diffuse and toon specular lighting modes.
+- Added subtle rim lighting to improve anime-style silhouette readability against the arena background.
+- Added material-aware tuning for hair, eyes and general body/clothing surfaces.
+- Preserved each imported GLB's original albedo/normal/roughness texture assignments by duplicating the existing material instead of replacing it with an untextured shader.
+
+### Changed
+- Hair uses stronger rim response and controlled roughness.
+- Eyes use a tighter, cleaner specular response.
+- Clothing/body surfaces keep a broader matte range for readable stylized shading.
+
+### Optimization
+- Materials are duplicated and configured once when the fighter model is built; there is no per-frame material allocation.
+- The pass uses built-in mobile-compatible BaseMaterial3D features rather than an expensive custom multi-pass outline.

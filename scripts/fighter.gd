@@ -131,9 +131,39 @@ func _try_build_external_model() -> bool:
     visual.scale = Vector3.ONE * 0.92
     visual.position = Vector3(0, 0.02, 0)
     model_root.add_child(visual)
+    _stylize_external_materials(visual)
     animation_player = _find_animation_player(visual)
     _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
+
+func _stylize_external_materials(node: Node) -> void:
+    if node is MeshInstance3D:
+        var mesh_instance := node as MeshInstance3D
+        if mesh_instance.mesh != null:
+            for surface_index in range(mesh_instance.mesh.get_surface_count()):
+                var original: Material = mesh_instance.get_active_material(surface_index)
+                if original is BaseMaterial3D:
+                    var stylized := (original as BaseMaterial3D).duplicate() as BaseMaterial3D
+                    stylized.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+                    stylized.specular_mode = BaseMaterial3D.SPECULAR_TOON
+                    stylized.rim_enabled = true
+                    stylized.rim = 0.54
+                    stylized.rim_tint = 0.28
+                    var material_name: String = String(stylized.resource_name).to_lower()
+                    if "hair" in material_name:
+                        stylized.roughness = clampf(stylized.roughness, 0.42, 0.62)
+                        stylized.rim = 0.72
+                        stylized.metallic_specular = 0.38
+                    elif "eye" in material_name:
+                        stylized.roughness = clampf(stylized.roughness, 0.18, 0.34)
+                        stylized.rim = 0.38
+                        stylized.metallic_specular = 0.62
+                    else:
+                        stylized.roughness = clampf(stylized.roughness, 0.48, 0.78)
+                        stylized.metallic_specular = 0.36
+                    mesh_instance.set_surface_override_material(surface_index, stylized)
+    for child in node.get_children():
+        _stylize_external_materials(child)
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
     if node is AnimationPlayer:
