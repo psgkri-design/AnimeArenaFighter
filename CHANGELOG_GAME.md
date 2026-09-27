@@ -377,3 +377,14 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Shockwaves and dust reuse the existing 24-slot VFX pool.
 - LOW reduces both spark rays and dust fragments.
 - No new realtime light nodes are spawned during combat; the Ultimate pulse reuses existing lights.
+
+## Update 22 — v0.3.0 release packaging
+
+### Changed
+- Android `versionCode` is now 3.
+- Android `versionName` is now 0.3.0.
+- README now reflects the current Godot 4.7.2 architecture and visual-polish feature set.
+- Legacy `UPDATE_LOG.txt` has been synchronized with the v0.3.0 milestone.
+
+### Fixed
+- Release metadata no longer identifies new builds as the original 0.1.0 prototype.

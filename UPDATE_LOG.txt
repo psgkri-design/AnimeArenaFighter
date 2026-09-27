@@ -90,6 +90,28 @@ VERSION 0.2.2 — 2026-09-27 — STARTUP VALIDATION FOLLOW-UP
 - Re-ran the stricter startup validation to catch hidden runtime/compile problems before publishing the APK.
 
 ==================================================
+VERSION 0.3.0 — 2026-09-27 — VISUAL / ANIMATION / MOBILE POLISH RELEASE
+==================================================
+- Added full combat smoke validation for Character Select -> Start Battle -> spawn -> damage -> KO -> rematch -> menu across all four fighters.
+- Connected imported rigged animation clips to locomotion, dodge, block, hit reactions, attacks, skills, Ultimate and death states.
+- Added fighter-specific attack animation sets and procedural head/chest combat look-at.
+- Integrated textured CC0 KayKit weapon assets and attached them to real hand-slot bones.
+- Added bone-anchored slash trails, Ultimate aura pulses, improved energy projectiles and fighter-specific VFX profiles.
+- Added pooled combat VFX and short strength-scaled hit-stop.
+- Improved Ultimate camera with a cinematic side arc and dynamic FOV.
+- Added dynamic combat-camera FOV, impact impulse and better fighter exclusion in camera collision.
+- Added 3D animated Character Select preview and selected-card highlighting.
+- Added LOW / MEDIUM / HIGH Android graphics presets with render-scale, MSAA, shadows, environment and VFX scaling.
+- Added live cooldowns, lock-on marker, fighter badges, Ultimate Ready indicator and damage/low-HP vignette.
+- Added READY -> FIGHT round presentation.
+- Added stylized toon/specular/rim material conversion while preserving imported textures.
+- Added cyber arena floor linework via MultiMesh, fog/bloom scaling, cyber sky gradient, distant energy moon and batched floating fragments.
+- Added ground impact feedback and Android haptic hooks.
+- Added canonical third-party license registry and retained CC0 provenance.
+- Updated Android release metadata to versionCode 3 / versionName 0.3.0.
+- CI now blocks APK publication on script/startup/smoke-test failures.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.
