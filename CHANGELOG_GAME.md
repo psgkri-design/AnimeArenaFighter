@@ -412,3 +412,27 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Trail segments are created once with the projectile and reused for its full lifetime.
 - CI smoke validation now checks style propagation and the prebuilt projectile trail for all four variants.
+
+
+## Update 24 — Fighter-specific skill mechanics
+
+### Added
+- Arcane Mage Rune Barrage now fires three individually simulated homing projectiles instead of sharing a generic melee hit.
+- Arcane Mage Rift Step now repositions away/sideways with invulnerability and arcane departure/arrival feedback.
+- Templar Knight Judgement Step now closes distance into a heavier armored strike.
+- Cyber Bunny Flash Shift now performs a fast side reposition with brief invulnerability into a rapid attack.
+- Succubus Shadow Step keeps an aggressive behind-target teleport but gains cleaner invulnerability and dash feedback.
+
+### Changed
+- Skill 3 behavior is now separately tuned for Rending Rush, Rune Barrage, Guard Breaker and Pulse Combo.
+- Skill 4 timing/range/guard pressure is now separately tuned for Wing Burst, Meteor Ring, Crimson Smite and Overdrive Burst.
+- Templar Guard Breaker and Crimson Smite apply substantially higher block pressure.
+- Cyber Bunny skill timings favor short startup/recovery while Templar finishers favor weight and guard damage.
+
+### Gameplay
+- Fighter archetypes now differ in movement utility, ranged pressure, defensive pressure and burst timing rather than only damage values/VFX.
+- Root motion remains disabled; all repositioning stays gameplay-code-driven for responsive touch controls.
+
+### Optimization
+- Mage barrage reuses the existing projectile implementation and pooled combat VFX.
+- No new per-frame systems were added.

@@ -727,36 +727,115 @@ func receive_hit(attacker,data:Dictionary)->void:
 func register_external_hit(_other,damage,pos,strength)->void:
     energy=minf(max_energy,energy+float(damage)*0.10); ultimate=minf(100.0,ultimate+float(damage)*0.08); impact.emit(pos,strength,fighter_color)
 
+func _spawn_skill_projectile(p_damage: float, lateral_offset: float = 0.0) -> void:
+    var projectile = ProjectileScript.new()
+    projectile.name = "SkillProjectile"
+    projectile.configure(self,target,fighter_color,p_damage,variant)
+    get_tree().current_scene.add_child(projectile)
+    var origin: Vector3 = _combat_fx_origin()
+    var side: Vector3 = global_transform.basis.x * lateral_offset
+    projectile.global_position = origin + side - global_transform.basis.z * 0.28
+
 func _try_skill(index:int)->bool:
     var costs:Array[float]=[24.0,30.0,36.0,45.0]
     if skill_cooldowns[index]>0.0 or energy<costs[index]:return false
     energy-=costs[index]
+
     var skill_damage: Array[float] = [90.0,120.0,150.0,185.0]
     match variant:
         1: skill_damage = [125.0,90.0,165.0,210.0]
         2: skill_damage = [95.0,145.0,190.0,240.0]
         3: skill_damage = [110.0,115.0,160.0,205.0]
+
     match index:
         0:
             skill_cooldowns[index]=4.0
             _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
             combat_fx.emit(_fighter_attack_fx_kind("skill"), _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.15)
-            var projectile=ProjectileScript.new()
-            projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale,variant)
-            get_tree().current_scene.add_child(projectile)
-            projectile.global_position=global_position+Vector3.UP*1.25-global_transform.basis.z*0.8
+            _spawn_skill_projectile(float(skill_damage[0])*power_scale)
+
         1:
             skill_cooldowns[index]=5.5
-            if is_instance_valid(target) and global_position.distance_to(target.global_position)<18.0:
-                var behind:Vector3=target.global_transform.basis.z.normalized()
-                global_position=target.global_position+behind*1.7; _face_target(1.0)
-                _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.06,"active":0.12,"recovery":0.28,"range":2.7,"hitstun":0.55,"knockback":10.0,"launch":2.0,"block_damage":30.0,"anim_kind":"skill","anim_index":1,"anim_speed":1.12})
+            if not is_instance_valid(target):
+                return true
+            var distance: float = global_position.distance_to(target.global_position)
+            match variant:
+                0:
+                    if distance < 18.0:
+                        var behind:Vector3=target.global_transform.basis.z.normalized()
+                        global_position=target.global_position+behind*1.7
+                        _clamp_arena()
+                        iframe_timer=maxf(iframe_timer,0.20)
+                        _face_target(1.0)
+                        combat_fx.emit("dash", global_position+Vector3.UP*0.9, -global_transform.basis.z, fighter_color, 0.95)
+                        _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.05,"active":0.12,"recovery":0.26,"range":2.8,"hitstun":0.55,"knockback":10.0,"launch":2.0,"block_damage":30.0,"anim_kind":"skill","anim_index":1,"anim_speed":1.14})
+                1:
+                    if distance < 20.0:
+                        var away:Vector3=global_position-target.global_position
+                        away.y=0.0
+                        if away.length_squared()<0.01: away=Vector3.BACK
+                        away=away.normalized()
+                        var side:Vector3=away.cross(Vector3.UP).normalized()
+                        combat_fx.emit("arcane", global_position+Vector3.UP, away, fighter_color, 0.72)
+                        global_position=target.global_position+away*5.0+side*1.8
+                        _clamp_arena()
+                        iframe_timer=maxf(iframe_timer,0.32)
+                        _face_target(1.0)
+                        _play_animation(_attack_animation("skill",1),0.06,1.10,true)
+                        combat_fx.emit("arcane", global_position+Vector3.UP, -global_transform.basis.z, fighter_color, 0.86)
+                2:
+                    if distance < 18.0:
+                        var approach:Vector3=target.global_position-global_position
+                        approach.y=0.0
+                        if approach.length_squared()<0.01: approach=Vector3.FORWARD
+                        global_position=target.global_position-approach.normalized()*2.25
+                        _clamp_arena()
+                        _face_target(1.0)
+                        combat_fx.emit("dash", global_position+Vector3.UP*0.8, approach.normalized(), fighter_color, 0.82)
+                        _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.16,"active":0.15,"recovery":0.36,"range":3.0,"hitstun":0.65,"knockback":12.0,"launch":2.0,"block_damage":52.0,"anim_kind":"skill","anim_index":1,"anim_speed":1.00})
+                3:
+                    if distance < 18.0:
+                        var side_dir:Vector3=target.global_transform.basis.x.normalized()
+                        global_position=target.global_position+side_dir*1.65+target.global_transform.basis.z*0.45
+                        _clamp_arena()
+                        iframe_timer=maxf(iframe_timer,0.24)
+                        _face_target(1.0)
+                        combat_fx.emit("dash", global_position+Vector3.UP*0.9, side_dir, fighter_color, 1.05)
+                        _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.04,"active":0.12,"recovery":0.20,"range":2.7,"hitstun":0.44,"knockback":8.0,"launch":1.2,"block_damage":24.0,"anim_kind":"skill","anim_index":1,"anim_speed":1.20})
+
         2:
             skill_cooldowns[index]=7.5
-            _start_attack({"damage":float(skill_damage[2])*power_scale,"startup":0.18,"active":0.18,"recovery":0.35,"range":3.4 if variant==1 else 3.1,"hitstun":0.62,"knockback":12.0,"launch":3.0,"block_damage":34.0,"anim_kind":"skill","anim_index":2,"anim_speed":1.02})
+            if variant==1:
+                _play_animation(_attack_animation("skill",index),0.06,1.04,true)
+                combat_fx.emit("arcane", _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.35)
+                var barrage_damage: float = float(skill_damage[2])*power_scale*0.34
+                _spawn_skill_projectile(barrage_damage,-0.58)
+                _spawn_skill_projectile(barrage_damage,0.0)
+                _spawn_skill_projectile(barrage_damage,0.58)
+            else:
+                var data: Dictionary = {}
+                match variant:
+                    0:
+                        data={"damage":float(skill_damage[2])*power_scale,"startup":0.10,"active":0.18,"recovery":0.28,"range":3.35,"hitstun":0.50,"knockback":10.0,"launch":2.2,"block_damage":28.0,"anim_kind":"skill","anim_index":2,"anim_speed":1.10}
+                    2:
+                        data={"damage":float(skill_damage[2])*power_scale,"startup":0.22,"active":0.17,"recovery":0.40,"range":3.2,"hitstun":0.68,"knockback":11.0,"launch":1.2,"block_damage":72.0,"anim_kind":"skill","anim_index":2,"anim_speed":0.96}
+                    3:
+                        data={"damage":float(skill_damage[2])*power_scale,"startup":0.07,"active":0.22,"recovery":0.24,"range":3.35,"hitstun":0.43,"knockback":8.0,"launch":1.5,"block_damage":30.0,"anim_kind":"skill","anim_index":2,"anim_speed":1.18}
+                _start_attack(data)
+
         3:
             skill_cooldowns[index]=9.5
-            _start_attack({"damage":float(skill_damage[3])*power_scale,"startup":0.32,"active":0.22,"recovery":0.45,"range":4.8,"hitstun":0.72,"knockback":15.0,"launch":4.0,"block_damage":40.0,"anim_kind":"skill","anim_index":3,"anim_speed":0.95})
+            var finisher: Dictionary = {}
+            match variant:
+                0:
+                    finisher={"damage":float(skill_damage[3])*power_scale,"startup":0.24,"active":0.24,"recovery":0.38,"range":4.2,"hitstun":0.72,"knockback":15.0,"launch":4.0,"block_damage":40.0,"anim_kind":"skill","anim_index":3,"anim_speed":1.02}
+                1:
+                    finisher={"damage":float(skill_damage[3])*power_scale,"startup":0.38,"active":0.24,"recovery":0.46,"range":5.2,"hitstun":0.84,"knockback":16.0,"launch":5.0,"block_damage":46.0,"anim_kind":"skill","anim_index":3,"anim_speed":0.92}
+                2:
+                    finisher={"damage":float(skill_damage[3])*power_scale,"startup":0.42,"active":0.20,"recovery":0.56,"range":4.0,"hitstun":0.88,"knockback":20.0,"launch":5.2,"block_damage":82.0,"anim_kind":"skill","anim_index":3,"anim_speed":0.90}
+                3:
+                    finisher={"damage":float(skill_damage[3])*power_scale,"startup":0.17,"active":0.25,"recovery":0.30,"range":4.45,"hitstun":0.60,"knockback":13.0,"launch":3.0,"block_damage":42.0,"anim_kind":"skill","anim_index":3,"anim_speed":1.12}
+            _start_attack(finisher)
     return true
 
 func _try_ultimate()->bool:
