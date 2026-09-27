@@ -8,6 +8,7 @@ signal quality_requested(level)
 
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
 const Roster = preload("res://scripts/character_data.gd")
+const FighterScript = preload("res://scripts/fighter.gd")
 
 var player = null
 var enemy = null
@@ -33,6 +34,16 @@ var enemy_stats: Label
 var difficulty_button: Button
 var quality_button: Button
 var start_button: Button
+var player_roster_buttons: Array[Button] = []
+var enemy_roster_buttons: Array[Button] = []
+var preview_container: SubViewportContainer
+var preview_viewport: SubViewport
+var preview_root: Node3D
+var preview_camera: Camera3D
+var preview_fighter = null
+var preview_label: Label
+var preview_variant: int = 0
+var preview_context: String = "PLAYER"
 
 var player_hp: ProgressBar
 var enemy_hp: ProgressBar
@@ -96,6 +107,10 @@ func bind_fighters(p_player, p_enemy) -> void:
     pause_ui.visible = false
     game_ui.visible = true
     controls_ui.visible = true
+    if preview_viewport != null:
+        preview_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+    if preview_root != null:
+        preview_root.process_mode = Node.PROCESS_MODE_DISABLED
     get_tree().paused = false
     round_time = 99.0
     timer_finished = false
@@ -130,6 +145,10 @@ func show_main_menu() -> void:
     game_ui.visible = false
     result_ui.visible = false
     pause_ui.visible = false
+    if preview_viewport != null:
+        preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+    if preview_root != null:
+        preview_root.process_mode = Node.PROCESS_MODE_INHERIT
     get_tree().paused = false
     _refresh_selection()
 
@@ -203,10 +222,12 @@ func _build_menu() -> void:
     enemy_stats.size = Vector2(620, 120)
     menu_ui.add_child(enemy_stats)
 
-    var vs := _label("VS", Vector2(0, 330), 72, Color(1.0, 0.82, 0.22))
-    vs.size = Vector2(1920, 100)
+    var vs := _label("VS", Vector2(0, 145), 56, Color(1.0, 0.82, 0.22))
+    vs.size = Vector2(1920, 76)
     vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_ui.add_child(vs)
+
+    _build_character_preview()
 
     _build_roster_buttons(true)
     _build_roster_buttons(false)
@@ -253,20 +274,113 @@ func _build_roster_buttons(for_player: bool) -> void:
     var y: float = 600.0
     for i in range(Roster.count()):
         var data: Dictionary = Roster.get_data(i)
-        var b := _menu_button(data.short, Vector2(x_start + i * 160.0, y), Vector2(140, 92), data.color.darkened(0.45))
+        var class_name: String = String(data.role).split(" / ")[0].to_upper()
+        var b := _menu_button("%s\n%s" % [data.short, class_name], Vector2(x_start + i * 160.0, y), Vector2(140, 92), data.color.darkened(0.45))
+        b.add_theme_font_size_override("font_size", 16)
         b.tooltip_text = data.name
         var index := i
         if for_player:
+            player_roster_buttons.append(b)
             b.pressed.connect(func():
                 selected_player = index
+                preview_variant = index
+                preview_context = "PLAYER"
                 _refresh_selection()
             )
         else:
+            enemy_roster_buttons.append(b)
             b.pressed.connect(func():
                 selected_enemy = index
+                preview_variant = index
+                preview_context = "OPPONENT"
                 _refresh_selection()
             )
         menu_ui.add_child(b)
+
+func _build_character_preview() -> void:
+    preview_label = _label("PLAYER PREVIEW", Vector2(805, 205), 17, Color(0.62,0.76,0.96))
+    preview_label.size = Vector2(310, 28)
+    preview_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    menu_ui.add_child(preview_label)
+
+    preview_container = SubViewportContainer.new()
+    preview_container.position = Vector2(810, 238)
+    preview_container.size = Vector2(300, 285)
+    preview_container.stretch = true
+    preview_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var preview_style := StyleBoxFlat.new()
+    preview_style.bg_color = Color(0.018,0.028,0.055,0.92)
+    preview_style.border_color = Color(0.18,0.46,0.82,0.55)
+    preview_style.border_width_left = 2
+    preview_style.border_width_top = 2
+    preview_style.border_width_right = 2
+    preview_style.border_width_bottom = 2
+    preview_style.corner_radius_top_left = 18
+    preview_style.corner_radius_top_right = 18
+    preview_style.corner_radius_bottom_left = 18
+    preview_style.corner_radius_bottom_right = 18
+    preview_container.add_theme_stylebox_override("panel", preview_style)
+    menu_ui.add_child(preview_container)
+
+    preview_viewport = SubViewport.new()
+    preview_viewport.size = Vector2i(600, 570)
+    preview_viewport.transparent_bg = true
+    preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+    preview_container.add_child(preview_viewport)
+
+    preview_root = Node3D.new()
+    preview_root.name = "CharacterPreviewRoot"
+    preview_viewport.add_child(preview_root)
+
+    var key := DirectionalLight3D.new()
+    key.rotation_degrees = Vector3(-38, -28, 0)
+    key.light_color = Color(0.80,0.90,1.0)
+    key.light_energy = 1.55
+    key.shadow_enabled = false
+    preview_root.add_child(key)
+
+    var rim := DirectionalLight3D.new()
+    rim.rotation_degrees = Vector3(-20, 150, 0)
+    rim.light_color = Color(1.0,0.18,0.42)
+    rim.light_energy = 0.65
+    rim.shadow_enabled = false
+    preview_root.add_child(rim)
+
+    preview_camera = Camera3D.new()
+    preview_camera.position = Vector3(0.0, 1.35, 4.4)
+    preview_camera.fov = 42.0
+    preview_camera.current = true
+    preview_root.add_child(preview_camera)
+    preview_camera.look_at(Vector3(0.0, 1.25, 0.0), Vector3.UP)
+
+func _refresh_preview() -> void:
+    if preview_root == null:
+        return
+    if is_instance_valid(preview_fighter):
+        preview_fighter.free()
+    preview_fighter = FighterScript.new()
+    preview_fighter.name = "PreviewFighter"
+    preview_fighter.configure(preview_variant, false, 1)
+    preview_root.add_child(preview_fighter)
+    preview_fighter.gravity = 0.0
+    preview_fighter.collision_layer = 0
+    preview_fighter.collision_mask = 0
+    preview_fighter.position = Vector3(0.0, -0.92, 0.0)
+    preview_fighter.rotation.y = PI
+    preview_fighter.set_physics_process(false)
+    preview_label.text = "%s PREVIEW" % preview_context
+
+func _refresh_roster_styles() -> void:
+    for i in range(player_roster_buttons.size()):
+        var data: Dictionary = Roster.get_data(i)
+        var selected: bool = i == selected_player
+        var card_color: Color = data.color.lightened(0.08) if selected else data.color.darkened(0.50)
+        player_roster_buttons[i].add_theme_stylebox_override("normal", _style(card_color, 1.0 if selected else 0.72))
+    for i in range(enemy_roster_buttons.size()):
+        var data: Dictionary = Roster.get_data(i)
+        var selected: bool = i == selected_enemy
+        var card_color: Color = data.color.lightened(0.08) if selected else data.color.darkened(0.50)
+        enemy_roster_buttons[i].add_theme_stylebox_override("normal", _style(card_color, 1.0 if selected else 0.72))
 
 func _refresh_selection() -> void:
     if player_name == null:
@@ -281,6 +395,8 @@ func _refresh_selection() -> void:
     enemy_desc.text = ed.description
     player_stats.text = _stats_text(pd)
     enemy_stats.text = _stats_text(ed)
+    _refresh_roster_styles()
+    _refresh_preview()
 
 func _stats_text(data: Dictionary) -> String:
     return "SPEED   %s\nPOWER   %s\nRANGE   %s\nDEFENSE %s\n\n%s" % [

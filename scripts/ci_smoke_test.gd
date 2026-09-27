@@ -43,6 +43,9 @@ func _run() -> void:
     _check(game.hud != null, "HUD created")
     _check(game.camera_rig != null, "combat camera created")
     _check(game.hud.menu_ui.visible, "character select visible on boot")
+    _check(is_instance_valid(game.hud.preview_fighter), "3D character preview created")
+    if is_instance_valid(game.hud.preview_fighter):
+        _check(game.hud.preview_fighter.animation_player != null, "3D preview uses rigged animated model")
 
     game.hud.quality_requested.emit(0)
     await process_frame

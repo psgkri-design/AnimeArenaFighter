@@ -128,3 +128,24 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Graphics settings are applied at runtime without reloading the match.
 - CI smoke-test now verifies LOW and MEDIUM FPS caps in addition to the full battle loop.
+
+## Update 09 — Animated 3D Character Select preview
+
+### Added
+- Added a live 3D preview viewport to Character Select.
+- Preview uses the same fighter construction pipeline and imported rigged model used by gameplay.
+- Selected PLAYER or OPPONENT can be previewed by tapping their roster card.
+- Added explicit PLAYER PREVIEW / OPPONENT PREVIEW context label.
+- Added selected-state styling for all eight player/opponent roster cards.
+
+### Changed
+- Roster cards now show fighter initials plus combat-class text instead of initials only.
+- Moved the central VS mark upward to make room for the 3D character presentation.
+
+### Animation
+- Preview models run their imported idle animation through the same AnimationPlayer integration as combat fighters.
+
+### Optimization
+- Preview SubViewport rendering and its node processing are disabled as soon as a match starts.
+- Preview rendering resumes only when returning to Character Select.
+- CI smoke-test now verifies that the preview fighter and its AnimationPlayer are created successfully.
