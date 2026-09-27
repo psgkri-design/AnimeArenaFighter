@@ -24,6 +24,19 @@ func _collect_animation_names(node: Node, output: Array[String]) -> void:
     for child in node.get_children():
         _collect_animation_names(child, output)
 
+func _dump_animation_players(node: Node, prefix: String = "") -> void:
+    if node is AnimationPlayer:
+        var ap := node as AnimationPlayer
+        var libs: Array[String] = []
+        for lib_name in ap.get_animation_library_list():
+            libs.append(String(lib_name))
+        var anims: Array[String] = []
+        for anim_name in ap.get_animation_list():
+            anims.append(String(anim_name))
+        print("UAL_PLAYER_DIAGNOSTIC path=", prefix + "/" + node.name, " libs=", libs, " anim_count=", anims.size(), " anims=", anims.slice(0, min(20, anims.size())))
+    for child in node.get_children():
+        _dump_animation_players(child, prefix + "/" + node.name)
+
 func _audit_animations(fighter, label: String) -> void:
     var names: Array[String] = []
     _collect_animation_names(fighter, names)
@@ -66,6 +79,17 @@ func _run() -> void:
     if game.audio_manager != null:
         _check(game.audio_manager.streams.size() >= 6, "procedural combat SFX loaded")
     _check(game.hud.menu_ui.visible, "character select visible on boot")
+
+    var ual_source := load("res://assets/quaternius/universal_animation_library_1.glb") as PackedScene
+    _check(ual_source != null, "UAL1 source scene loads")
+    if ual_source != null:
+        var ual_root := ual_source.instantiate()
+        print("UAL_SOURCE_DIAGNOSTIC begin")
+        _dump_animation_players(ual_root)
+        print("UAL_SOURCE_DIAGNOSTIC end")
+        ual_root.free()
+
+
     _check(is_instance_valid(game.hud.preview_fighter), "3D character preview created")
     _check(game.hud.preview_platform_root != null, "preview platform created")
     _check(game.hud.skill_buttons.size() == 4, "four mobile skill buttons created")
