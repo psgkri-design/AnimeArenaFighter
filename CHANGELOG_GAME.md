@@ -354,3 +354,26 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Floating fragments are rendered as one MultiMesh draw path.
 - LOW graphics preset hides the floating fragment batch automatically.
 - Distant moon is unshaded and does not cast shadows.
+
+
+## Update 21 — Ground impact VFX, haptics and Ultimate lighting pulse
+
+### Added
+- Added pooled ground shockwaves for heavy impacts and Ultimate activation.
+- Added pooled stylized dash dust with density tied to LOW / MEDIUM / HIGH.
+- Added short Android haptic feedback for landed impacts and Ultimate startup.
+- Added a fighter-colored Ultimate lighting pulse using the existing arena fill/key lights and WorldEnvironment.
+
+### Changed
+- Fighter-specific dual-slash, arcane, cleave and plasma effects are preserved and now layer with ground-contact feedback.
+- SFX hooks now recognize all fighter-specific attack VFX profiles rather than only the legacy generic slash.
+- Heavy attacks combine animation, weapon trail, impact burst, shockwave, hit-stop, camera impulse and haptics.
+
+### Graphics
+- Ultimate startup now influences arena lighting in addition to aura, sky backdrop and cinematic camera motion.
+- Dash movement has a lightweight ground-contact dust layer under the existing energy streak.
+
+### Optimization
+- Shockwaves and dust reuse the existing 24-slot VFX pool.
+- LOW reduces both spark rays and dust fragments.
+- No new realtime light nodes are spawned during combat; the Ultimate pulse reuses existing lights.

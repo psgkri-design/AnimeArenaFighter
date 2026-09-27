@@ -18,7 +18,11 @@ var selected_difficulty: int = 1
 var match_running: bool = false
 var vfx_pool
 var quality_manager
+var world_environment: WorldEnvironment
+var key_light: DirectionalLight3D
+var fill_light: DirectionalLight3D
 var hit_stop_serial: int = 0
+var ultimate_light_serial: int = 0
 
 func _ready() -> void:
     randomize()
@@ -52,7 +56,7 @@ func _ready() -> void:
     quality_manager.apply_preset(self, 1, vfx_pool)
 
 func _build_world() -> void:
-    var environment_node := WorldEnvironment.new()
+    world_environment = WorldEnvironment.new()
     var environment := Environment.new()
     environment.background_mode = Environment.BG_SKY
     var sky := Sky.new()
@@ -73,23 +77,23 @@ func _build_world() -> void:
     environment.fog_density = 0.0032
     environment.fog_depth_begin = 22.0
     environment.fog_depth_end = 95.0
-    environment_node.environment = environment
-    add_child(environment_node)
+    world_environment.environment = environment
+    add_child(world_environment)
 
-    var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-48, -32, 0)
-    sun.light_color = Color(0.72, 0.82, 1.0)
-    sun.light_energy = 1.3
-    sun.shadow_enabled = true
-    sun.directional_shadow_max_distance = 40.0
-    add_child(sun)
+    key_light = DirectionalLight3D.new()
+    key_light.rotation_degrees = Vector3(-48, -32, 0)
+    key_light.light_color = Color(0.72, 0.82, 1.0)
+    key_light.light_energy = 1.3
+    key_light.shadow_enabled = true
+    key_light.directional_shadow_max_distance = 40.0
+    add_child(key_light)
 
-    var fill := DirectionalLight3D.new()
-    fill.rotation_degrees = Vector3(-25, 145, 0)
-    fill.light_color = Color(1.0, 0.20, 0.32)
-    fill.light_energy = 0.38
-    fill.shadow_enabled = false
-    add_child(fill)
+    fill_light = DirectionalLight3D.new()
+    fill_light.rotation_degrees = Vector3(-25, 145, 0)
+    fill_light.light_color = Color(1.0, 0.20, 0.32)
+    fill_light.light_energy = 0.38
+    fill_light.shadow_enabled = false
+    add_child(fill_light)
 
     _build_sky_landmarks()
 
@@ -467,23 +471,31 @@ func _on_time_expired() -> void:
 func _on_impact(position: Vector3, strength: float, color: Color) -> void:
     camera_rig.add_shake(strength)
     _spawn_impact_vfx(position, strength, color)
+    if strength >= 1.0 and vfx_pool != null:
+        vfx_pool.spawn_effect("shockwave", Vector3(position.x, 0.075, position.z), Vector3.UP, color, strength)
+    _mobile_haptic(strength)
     sfx_requested.emit("impact", position)
     _request_hit_stop(clampf(0.018 + strength * 0.020, 0.022, 0.065))
 
 func _on_combat_fx(kind: String, position: Vector3, direction: Vector3, color: Color, strength: float) -> void:
     if vfx_pool != null:
         vfx_pool.spawn_effect(kind, position, direction, color, strength)
-    if kind == "slash":
+    if kind in ["slash","dual_slash","cleave","plasma"]:
         sfx_requested.emit("swing", position)
     elif kind == "dash":
+        if vfx_pool != null:
+            vfx_pool.spawn_effect("dust", Vector3(position.x,0.07,position.z), direction, Color(0.42,0.34,0.28), strength)
         sfx_requested.emit("dash", position)
-    elif kind == "aura" or kind == "charge":
+    elif kind in ["aura","charge","arcane"]:
         sfx_requested.emit("energy", position)
 
 func _on_ultimate_started(attacker, victim) -> void:
     camera_rig.play_ultimate(attacker, victim)
     if vfx_pool != null:
         vfx_pool.spawn_effect("aura", attacker.global_position + Vector3.UP * 1.2, -attacker.global_transform.basis.z, attacker.fighter_color, 2.0)
+        vfx_pool.spawn_effect("shockwave", Vector3(attacker.global_position.x,0.08,attacker.global_position.z), Vector3.UP, attacker.fighter_color, 1.8)
+    _pulse_ultimate_lighting(attacker.fighter_color)
+    _mobile_haptic(1.8)
     sfx_requested.emit("ultimate", attacker.global_position)
 
 func _on_perfect_evade(fighter) -> void:
@@ -512,6 +524,42 @@ func _request_hit_stop(duration: float) -> void:
     if serial == hit_stop_serial:
         Engine.time_scale = 1.0
 
+
+func _mobile_haptic(strength: float) -> void:
+    if OS.get_name() != "Android":
+        return
+    var duration_ms: int = clampi(int(10.0 + strength * 10.0), 10, 32)
+    var amplitude: float = clampf(0.32 + strength * 0.18, 0.32, 0.82)
+    Input.vibrate_handheld(duration_ms, amplitude)
+
+func _pulse_ultimate_lighting(color: Color) -> void:
+    if DisplayServer.get_name() == "headless":
+        return
+    ultimate_light_serial += 1
+    var serial: int = ultimate_light_serial
+    if fill_light != null:
+        fill_light.light_color = color.lerp(Color.WHITE, 0.16)
+        fill_light.light_energy = 1.05
+    if key_light != null:
+        key_light.light_energy = 1.55
+    if world_environment != null and world_environment.environment != null:
+        world_environment.environment.ambient_light_color = color.darkened(0.45)
+        world_environment.environment.ambient_light_energy = 0.92
+        if world_environment.environment.glow_enabled:
+            world_environment.environment.glow_intensity += 0.10
+    await get_tree().create_timer(0.46, false).timeout
+    if serial != ultimate_light_serial:
+        return
+    if fill_light != null:
+        fill_light.light_color = Color(1.0,0.20,0.32)
+        fill_light.light_energy = 0.38
+    if key_light != null:
+        key_light.light_energy = 1.3
+    if world_environment != null and world_environment.environment != null:
+        world_environment.environment.ambient_light_color = Color(0.20,0.27,0.43)
+        world_environment.environment.ambient_light_energy = 0.72
+    if quality_manager != null:
+        quality_manager.apply_preset(self, quality_manager.current_level, vfx_pool)
 
 func _on_quality_requested(level: int) -> void:
     if quality_manager != null:
