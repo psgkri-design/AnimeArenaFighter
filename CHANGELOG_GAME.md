@@ -190,3 +190,18 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Floor decoration is rendered through a single MultiMesh batch.
 - LOW preset disables glow and fog completely.
 - No additional realtime shadow-casting lights were introduced.
+
+## Update 12 — Combat HUD readability and lock-on feedback
+
+### Added
+- Added compact fighter badge blocks beside both health bars using each fighter's roster identity/color.
+- Added a world-projected lock-on marker that tracks the opponent on screen and hides automatically when lock-on is disabled or the target is behind the camera.
+- Added live Ultimate percentage and pulsing ULT READY feedback.
+- Added an original project icon so Android/Godot builds no longer report a missing project icon.
+
+### Changed
+- Combat HUD now communicates target state, fighter identity, skill cooldowns and ultimate readiness without covering the arena.
+
+### UI
+- Fighter badges inherit selected roster colors.
+- Lock marker is projected from the enemy's upper-body position for clearer target readability.

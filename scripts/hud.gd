@@ -56,9 +56,13 @@ var fps_label: Label
 var controls_ui: Control
 var combat_player_name: Label
 var combat_enemy_name: Label
+var combat_player_badge: Label
+var combat_enemy_badge: Label
 var round_timer_label: Label
 var skill_strip_label: Label
 var lock_indicator: Label
+var lock_target_marker: Label
+var ultimate_status_label: Label
 var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
@@ -85,6 +89,14 @@ func _process(_delta: float) -> void:
         fps_label.text = "%s  •  %d FPS" % [["LOW","MED","HIGH"][selected_quality], Engine.get_frames_per_second()]
         lock_indicator.text = "LOCK ◆" if player.lock_on else "FREE CAM"
         lock_indicator.add_theme_color_override("font_color", Color(1.0,0.84,0.28) if player.lock_on else Color(0.48,0.58,0.72))
+        _update_lock_marker()
+        if player.ultimate >= 99.9:
+            var pulse: float = 0.72 + sin(Time.get_ticks_msec() * 0.010) * 0.20
+            ultimate_status_label.text = "ULT READY"
+            ultimate_status_label.add_theme_color_override("font_color", Color(1.0,0.82,0.18,pulse))
+        else:
+            ultimate_status_label.text = "ULT %02d%%" % int(player.ultimate)
+            ultimate_status_label.add_theme_color_override("font_color", Color(0.78,0.72,0.48))
         if skill_names.size() >= 4:
             var cooldown_parts: Array[String] = []
             for i in range(4):
@@ -120,6 +132,10 @@ func bind_fighters(p_player, p_enemy) -> void:
     var enemy_data: Dictionary = Roster.get_data(int(p_enemy.variant))
     combat_player_name.text = player_data.name
     combat_enemy_name.text = enemy_data.name
+    combat_player_badge.text = player_data.short
+    combat_enemy_badge.text = enemy_data.short
+    combat_player_badge.add_theme_stylebox_override("normal", _style(player_data.color.darkened(0.32), 0.96))
+    combat_enemy_badge.add_theme_stylebox_override("normal", _style(enemy_data.color.darkened(0.32), 0.96))
     combat_player_name.add_theme_color_override("font_color", player_data.color.lightened(0.24))
     combat_enemy_name.add_theme_color_override("font_color", enemy_data.color.lightened(0.24))
 
@@ -427,6 +443,18 @@ func _build_game_ui() -> void:
     game_ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(game_ui)
 
+    combat_player_badge = _label("P1",Vector2(18,20),20,Color.WHITE)
+    combat_player_badge.size = Vector2(48,68)
+    combat_player_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    combat_player_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    game_ui.add_child(combat_player_badge)
+
+    combat_enemy_badge = _label("AI",Vector2(1854,20),20,Color.WHITE)
+    combat_enemy_badge.size = Vector2(48,68)
+    combat_enemy_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    combat_enemy_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    game_ui.add_child(combat_enemy_badge)
+
     player_hp = _bar(Vector2(70,55), Vector2(680,34), Color(0.10,0.62,1.0))
     game_ui.add_child(player_hp)
     enemy_hp = _bar(Vector2(1170,55), Vector2(680,34), Color(1.0,0.18,0.25))
@@ -462,6 +490,17 @@ func _build_game_ui() -> void:
     lock_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     game_ui.add_child(lock_indicator)
 
+    ultimate_status_label = _label("ULT 00%",Vector2(500,154),17,Color(0.78,0.72,0.48))
+    ultimate_status_label.size = Vector2(160,30)
+    game_ui.add_child(ultimate_status_label)
+
+    lock_target_marker = _label("◇",Vector2.ZERO,38,Color(1.0,0.82,0.22))
+    lock_target_marker.size = Vector2(54,54)
+    lock_target_marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    lock_target_marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    lock_target_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    game_ui.add_child(lock_target_marker)
+
     combo_label = _label("",Vector2(0,235),34,Color(1.0,0.88,0.35))
     combo_label.size = Vector2(1920,55)
     combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -495,6 +534,23 @@ func _build_game_ui() -> void:
     _add_action("S4","skill_4",Vector2(1438,595),Vector2(105,82))
     _add_action("ULT","ultimate",Vector2(1585,545),Vector2(150,95))
     _add_action("LOCK","lock_on",Vector2(1040,835),Vector2(145,82))
+
+func _update_lock_marker() -> void:
+    if lock_target_marker == null or not is_instance_valid(player) or not is_instance_valid(enemy) or not player.lock_on:
+        if lock_target_marker != null:
+            lock_target_marker.visible = false
+        return
+    var cam := get_viewport().get_camera_3d()
+    if cam == null:
+        lock_target_marker.visible = false
+        return
+    var target_position: Vector3 = enemy.global_position + Vector3.UP * 1.55
+    if cam.is_position_behind(target_position):
+        lock_target_marker.visible = false
+        return
+    var screen_pos: Vector2 = cam.unproject_position(target_position)
+    lock_target_marker.position = screen_pos - lock_target_marker.size * 0.5
+    lock_target_marker.visible = true
 
 func _build_result() -> void:
     result_ui = Control.new()
