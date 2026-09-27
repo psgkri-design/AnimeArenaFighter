@@ -282,3 +282,21 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Weapon trails reuse the existing 24-slot pooled combat VFX system.
 - Aura pulses are rate-limited and do not spawn every frame.
 - Projectile polish reuses one shared shader material inside each projectile instead of creating separate materials for every ring.
+
+## Update 17 — Cinematic Ultimate camera pass
+
+### Added
+- Added a timed side-arc camera move for Ultimate attacks instead of a fixed static cinematic angle.
+- Added fighter-dependent camera side selection so fast fighters and power fighters do not all use the same composition.
+- Added a tighter-to-wider FOV curve through the Ultimate camera beat.
+
+### Changed
+- Ultimate framing now eases around the attacker and victim while keeping both readable.
+- Camera collision checks now exclude both the player and the target, reducing close-range camera pops caused by fighter collision bodies.
+- Cinematic camera positions still pass through the world collision solver before being applied.
+
+### Graphics
+- Ultimate attacks now have a visibly distinct camera language from normal combat without adding long non-interactive cutscenes.
+
+### Optimization
+- Camera arc uses simple interpolation and vector math only; it adds no new scene nodes or allocations during combat.
