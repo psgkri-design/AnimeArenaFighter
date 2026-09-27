@@ -27,6 +27,7 @@ func apply_preset(root: Node, level: int, vfx_pool = null) -> void:
 
     _apply_light_quality(root)
     _apply_environment_quality(root)
+    _apply_decor_quality(root)
 
     if vfx_pool != null and vfx_pool.has_method("set_quality"):
         vfx_pool.set_quality(current_level)
@@ -67,3 +68,12 @@ func _apply_environment_quality(root: Node) -> void:
                     world.environment.fog_density = 0.0038
     for child in root.get_children():
         _apply_environment_quality(child)
+
+
+func _apply_decor_quality(root: Node) -> void:
+    var fragments := root.get_node_or_null("SkyEnergyFragments")
+    if fragments != null:
+        fragments.visible = current_level > Preset.LOW
+    var moon := root.get_node_or_null("DistantEnergyMoon")
+    if moon != null:
+        moon.visible = true

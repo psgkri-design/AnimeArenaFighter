@@ -335,3 +335,22 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - All four new effect profiles reuse the same existing pooled nodes, meshes and materials; no extra runtime allocation path was introduced.
+
+## Update 20 — Stylized sky and distant arena landmarks
+
+### Added
+- Added a lightweight custom sky shader with deep-blue zenith, magenta horizon and dark lower gradient.
+- Added a distant emissive energy moon/orb to break up the flat skyline.
+- Added 28 floating energy fragments around the arena using a single MultiMesh batch.
+
+### Changed
+- World environment now uses a sky material instead of a flat background color.
+- Atmospheric fog and cyber-city silhouettes now blend into a stronger layered horizon.
+
+### Graphics
+- The arena gains vertical depth and a more recognizable anime sci-fi atmosphere without adding clutter to the combat center.
+
+### Optimization
+- Floating fragments are rendered as one MultiMesh draw path.
+- LOW graphics preset hides the floating fragment batch automatically.
+- Distant moon is unshaded and does not cast shadows.

@@ -54,8 +54,12 @@ func _ready() -> void:
 func _build_world() -> void:
     var environment_node := WorldEnvironment.new()
     var environment := Environment.new()
-    environment.background_mode = Environment.BG_COLOR
-    environment.background_color = Color(0.012, 0.018, 0.045)
+    environment.background_mode = Environment.BG_SKY
+    var sky := Sky.new()
+    var sky_mat := ShaderMaterial.new()
+    sky_mat.shader = load("res://shaders/cyber_sky.gdshader")
+    sky.sky_material = sky_mat
+    environment.sky = sky
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     environment.ambient_light_color = Color(0.20, 0.27, 0.43)
     environment.ambient_light_energy = 0.72
@@ -86,6 +90,57 @@ func _build_world() -> void:
     fill.light_energy = 0.38
     fill.shadow_enabled = false
     add_child(fill)
+
+    _build_sky_landmarks()
+
+func _build_sky_landmarks() -> void:
+    var moon := MeshInstance3D.new()
+    moon.name = "DistantEnergyMoon"
+    var sphere := SphereMesh.new()
+    sphere.radius = 7.5
+    sphere.height = 15.0
+    sphere.radial_segments = 20
+    sphere.rings = 10
+    moon.mesh = sphere
+    moon.position = Vector3(-48.0, 34.0, -88.0)
+    var moon_mat := StandardMaterial3D.new()
+    moon_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    moon_mat.albedo_color = Color(0.22, 0.36, 0.72)
+    moon_mat.emission_enabled = true
+    moon_mat.emission = Color(0.30, 0.52, 1.0)
+    moon_mat.emission_energy_multiplier = 1.35
+    moon.material_override = moon_mat
+    add_child(moon)
+
+    var fragments := MultiMeshInstance3D.new()
+    fragments.name = "SkyEnergyFragments"
+    var shard_mesh := BoxMesh.new()
+    shard_mesh.size = Vector3(0.22, 1.5, 0.08)
+
+    var multi := MultiMesh.new()
+    multi.transform_format = MultiMesh.TRANSFORM_3D
+    multi.mesh = shard_mesh
+    multi.instance_count = 28
+
+    for i in range(28):
+        var angle: float = TAU * float(i) / 28.0 + float(i % 3) * 0.08
+        var radius: float = 30.0 + float((i * 5) % 11) * 2.3
+        var height: float = 8.0 + float((i * 7) % 13) * 1.65
+        var origin := Vector3(cos(angle) * radius, height, sin(angle) * radius)
+        var basis := Basis(Vector3.UP, angle + float(i % 5) * 0.23)
+        basis = basis.rotated(Vector3.RIGHT, -0.35 + float(i % 7) * 0.10)
+        basis = basis.scaled(Vector3(0.65 + float(i % 4) * 0.16, 0.8 + float(i % 5) * 0.14, 1.0))
+        multi.set_instance_transform(i, Transform3D(basis, origin))
+
+    fragments.multimesh = multi
+    var shard_mat := StandardMaterial3D.new()
+    shard_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    shard_mat.albedo_color = Color(0.08, 0.40, 0.78)
+    shard_mat.emission_enabled = true
+    shard_mat.emission = Color(0.10, 0.58, 1.0)
+    shard_mat.emission_energy_multiplier = 1.25
+    fragments.material_override = shard_mat
+    add_child(fragments)
 
 func _build_arena() -> void:
     var arena_root := Node3D.new()
