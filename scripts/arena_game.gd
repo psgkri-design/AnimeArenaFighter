@@ -4,6 +4,7 @@ const FighterScript = preload("res://scripts/fighter.gd")
 const CameraScript = preload("res://scripts/combat_camera.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const VFXScript = preload("res://scripts/combat_vfx_pool.gd")
+const QualityScript = preload("res://scripts/quality_manager.gd")
 
 signal sfx_requested(cue, position)
 
@@ -16,6 +17,7 @@ var selected_enemy_variant: int = 2
 var selected_difficulty: int = 1
 var match_running: bool = false
 var vfx_pool
+var quality_manager
 var hit_stop_serial: int = 0
 
 func _ready() -> void:
@@ -30,6 +32,10 @@ func _ready() -> void:
     vfx_pool.name = "CombatVFXPool"
     add_child(vfx_pool)
 
+    quality_manager = QualityScript.new()
+    quality_manager.name = "QualityManager"
+    add_child(quality_manager)
+
     camera_rig = CameraScript.new()
     camera_rig.name = "CombatCamera"
     add_child(camera_rig)
@@ -42,6 +48,8 @@ func _ready() -> void:
     hud.restart_requested.connect(_restart_match)
     hud.menu_requested.connect(_return_to_menu)
     hud.time_expired.connect(_on_time_expired)
+    hud.quality_requested.connect(_on_quality_requested)
+    quality_manager.apply_preset(self, 1, vfx_pool)
 
 func _build_world() -> void:
     var environment_node := WorldEnvironment.new()
@@ -371,3 +379,8 @@ func _request_hit_stop(duration: float) -> void:
     await get_tree().create_timer(duration, true, false, true).timeout
     if serial == hit_stop_serial:
         Engine.time_scale = 1.0
+
+
+func _on_quality_requested(level: int) -> void:
+    if quality_manager != null:
+        quality_manager.apply_preset(self, level, vfx_pool)

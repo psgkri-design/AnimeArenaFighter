@@ -109,3 +109,22 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Combat VFX meshes and shader materials are preallocated once.
 - Hit-stop is disabled in headless CI so automated gameplay tests remain deterministic.
 - VFX pool exposes LOW/MEDIUM/HIGH ray-count scaling for the upcoming quality presets.
+
+## Update 08 — Mobile graphics presets and combat HUD telemetry
+
+### Added
+- Added LOW / MEDIUM / HIGH graphics presets selectable from Character Select.
+- Added runtime 3D render-scale control, MSAA scaling, positional shadow-atlas scaling and 30/60 FPS caps.
+- Added VFX-density scaling so LOW/MEDIUM/HIGH uses fewer or more pooled spark rays.
+- Added lock-on status indicator to the combat HUD.
+- Added live per-skill cooldown timers with READY state.
+
+### Changed
+- LOW targets weaker devices with 0.72 render scale, no MSAA, no positional shadow atlas and a 30 FPS cap.
+- MEDIUM is the default target with 0.88 render scale, 2x MSAA and 60 FPS.
+- HIGH uses native 3D scale, 4x MSAA, larger shadow atlas and 60 FPS.
+- Main directional shadow distance now scales with the selected graphics preset.
+
+### Optimization
+- Graphics settings are applied at runtime without reloading the match.
+- CI smoke-test now verifies LOW and MEDIUM FPS caps in addition to the full battle loop.

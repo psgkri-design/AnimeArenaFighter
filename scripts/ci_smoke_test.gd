@@ -44,6 +44,13 @@ func _run() -> void:
     _check(game.camera_rig != null, "combat camera created")
     _check(game.hud.menu_ui.visible, "character select visible on boot")
 
+    game.hud.quality_requested.emit(0)
+    await process_frame
+    _check(Engine.max_fps == 30, "LOW graphics preset applies 30 FPS cap")
+    game.hud.quality_requested.emit(1)
+    await process_frame
+    _check(Engine.max_fps == 60, "MEDIUM graphics preset restores 60 FPS cap")
+
     for variant in range(4):
         var enemy_variant: int = (variant + 1) % 4
         game.hud.start_requested.emit(variant, enemy_variant, 1)

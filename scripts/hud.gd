@@ -4,6 +4,7 @@ signal start_requested(player_variant, enemy_variant, difficulty)
 signal restart_requested
 signal menu_requested
 signal time_expired
+signal quality_requested(level)
 
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
 const Roster = preload("res://scripts/character_data.gd")
@@ -13,6 +14,7 @@ var enemy = null
 var selected_player: int = 0
 var selected_enemy: int = 2
 var selected_difficulty: int = 1
+var selected_quality: int = 1
 
 var menu_ui: Control
 var game_ui: Control
@@ -29,6 +31,7 @@ var enemy_desc: Label
 var player_stats: Label
 var enemy_stats: Label
 var difficulty_button: Button
+var quality_button: Button
 var start_button: Button
 
 var player_hp: ProgressBar
@@ -44,6 +47,8 @@ var combat_player_name: Label
 var combat_enemy_name: Label
 var round_timer_label: Label
 var skill_strip_label: Label
+var lock_indicator: Label
+var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
 
@@ -66,7 +71,16 @@ func _process(_delta: float) -> void:
         energy_bar.value = player.energy
         ultimate_bar.max_value = 100.0
         ultimate_bar.value = player.ultimate
-        fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+        fps_label.text = "%s  •  %d FPS" % [["LOW","MED","HIGH"][selected_quality], Engine.get_frames_per_second()]
+        lock_indicator.text = "LOCK ◆" if player.lock_on else "FREE CAM"
+        lock_indicator.add_theme_color_override("font_color", Color(1.0,0.84,0.28) if player.lock_on else Color(0.48,0.58,0.72))
+        if skill_names.size() >= 4:
+            var cooldown_parts: Array[String] = []
+            for i in range(4):
+                var cooldown: float = player.skill_cooldowns[i]
+                var suffix: String = " %.1f" % cooldown if cooldown > 0.05 else " READY"
+                cooldown_parts.append("S%d %s%s" % [i + 1, skill_names[i], suffix])
+            skill_strip_label.text = "    ".join(cooldown_parts)
         if not result_ui.visible and not get_tree().paused and not timer_finished:
             round_time = maxf(0.0, round_time - _delta)
             round_timer_label.text = "%02d" % int(ceil(round_time))
@@ -95,6 +109,9 @@ func bind_fighters(p_player, p_enemy) -> void:
     combat_enemy_name.add_theme_color_override("font_color", enemy_data.color.lightened(0.24))
 
     var skills: Array = player_data.skills
+    skill_names.clear()
+    for skill in skills:
+        skill_names.append(String(skill))
     skill_strip_label.text = "S1  %s    S2  %s    S3  %s    S4  %s" % [skills[0], skills[1], skills[2], skills[3]]
     set_combo(0)
 
@@ -194,6 +211,11 @@ func _build_menu() -> void:
     _build_roster_buttons(true)
     _build_roster_buttons(false)
 
+    quality_button = _menu_button("GRAPHICS: MEDIUM", Vector2(805, 555), Vector2(310, 66), Color(0.10, 0.28, 0.42))
+    quality_button.add_theme_font_size_override("font_size", 20)
+    quality_button.pressed.connect(_cycle_quality)
+    menu_ui.add_child(quality_button)
+
     difficulty_button = _menu_button("AI: NORMAL", Vector2(805, 645), Vector2(310, 72), Color(0.16, 0.20, 0.30))
     difficulty_button.pressed.connect(_cycle_difficulty)
     menu_ui.add_child(difficulty_button)
@@ -279,6 +301,11 @@ func _cycle_difficulty() -> void:
     selected_difficulty = (selected_difficulty + 1) % 3
     difficulty_button.text = ["AI: EASY", "AI: NORMAL", "AI: HARD"][selected_difficulty]
 
+func _cycle_quality() -> void:
+    selected_quality = (selected_quality + 1) % 3
+    quality_button.text = "GRAPHICS: %s" % ["LOW", "MEDIUM", "HIGH"][selected_quality]
+    quality_requested.emit(selected_quality)
+
 func _build_game_ui() -> void:
     game_ui = Control.new()
     game_ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -311,10 +338,15 @@ func _build_game_ui() -> void:
     game_ui.add_child(ultimate_bar)
 
     skill_strip_label = _label("",Vector2(70,198),16,Color(0.68,0.78,0.92))
-    skill_strip_label.size = Vector2(980,30)
+    skill_strip_label.size = Vector2(1220,30)
     game_ui.add_child(skill_strip_label)
 
-    combo_label = _label("",Vector2(0,215),34,Color(1.0,0.88,0.35))
+    lock_indicator = _label("LOCK ◆",Vector2(860,92),18,Color(1.0,0.84,0.28))
+    lock_indicator.size = Vector2(200,34)
+    lock_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    game_ui.add_child(lock_indicator)
+
+    combo_label = _label("",Vector2(0,235),34,Color(1.0,0.88,0.35))
     combo_label.size = Vector2(1920,55)
     combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     game_ui.add_child(combo_label)
