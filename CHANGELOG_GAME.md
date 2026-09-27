@@ -205,3 +205,16 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### UI
 - Fighter badges inherit selected roster colors.
 - Lock marker is projected from the enemy's upper-body position for clearer target readability.
+
+## Update 13 — Round presentation flow
+
+### Added
+- Added a short animated READY → FIGHT banner when a match begins.
+- Added a dedicated controls-enabled gate so player input and enemy AI do not start moving before the round presentation finishes.
+
+### Changed
+- Character Select now transitions into a clearly staged arena start instead of dropping directly into active combat.
+- Camera receives a very small impulse on FIGHT for visual punch.
+
+### Fixed
+- Headless CI bypasses the presentation delay so automated combat validation remains fast and deterministic.

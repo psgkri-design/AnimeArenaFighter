@@ -63,6 +63,7 @@ var skill_strip_label: Label
 var lock_indicator: Label
 var lock_target_marker: Label
 var ultimate_status_label: Label
+var round_banner_label: Label
 var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
@@ -148,6 +149,26 @@ func bind_fighters(p_player, p_enemy) -> void:
 
 func set_combo(value: int) -> void:
     combo_label.text = "" if value <= 1 else "%d HIT COMBO" % value
+
+func play_round_banner(text_value: String, accent: Color = Color(1.0,0.92,0.62)) -> void:
+    if round_banner_label == null:
+        return
+    round_banner_label.text = text_value
+    round_banner_label.visible = true
+    round_banner_label.modulate = Color(accent.r, accent.g, accent.b, 0.0)
+    round_banner_label.scale = Vector2(1.18, 1.18)
+    round_banner_label.pivot_offset = round_banner_label.size * 0.5
+    var tween := create_tween()
+    tween.set_parallel(true)
+    tween.tween_property(round_banner_label, "modulate:a", 1.0, 0.10)
+    tween.tween_property(round_banner_label, "scale", Vector2.ONE, 0.18)
+
+func hide_round_banner() -> void:
+    if round_banner_label == null:
+        return
+    var tween := create_tween()
+    tween.tween_property(round_banner_label, "modulate:a", 0.0, 0.16)
+    tween.tween_callback(func(): round_banner_label.visible = false)
 
 func show_result(text_value: String) -> void:
     result_label.text = text_value
@@ -500,6 +521,14 @@ func _build_game_ui() -> void:
     lock_target_marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     lock_target_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
     game_ui.add_child(lock_target_marker)
+
+    round_banner_label = _label("",Vector2(0,365),84,Color(1.0,0.92,0.62))
+    round_banner_label.size = Vector2(1920,150)
+    round_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    round_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    round_banner_label.visible = false
+    round_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    game_ui.add_child(round_banner_label)
 
     combo_label = _label("",Vector2(0,235),34,Color(1.0,0.88,0.35))
     combo_label.size = Vector2(1920,55)

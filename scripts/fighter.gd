@@ -20,6 +20,7 @@ var ai_level: int = 1
 var variant: int = 0
 var target = null
 var lock_on: bool = true
+var controls_enabled: bool = true
 
 var max_health: float = 1000.0
 var health: float = 1000.0
@@ -416,6 +417,15 @@ func set_target(p_target) -> void:
 
 func _physics_process(delta: float) -> void:
     _tick(delta)
+    if not controls_enabled and state != State.DEAD:
+        state = State.IDLE
+        velocity.x = move_toward(velocity.x, 0.0, 28.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 28.0 * delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        _clamp_arena()
+        _update_visuals(delta)
+        return
     if state == State.DEAD:
         _apply_gravity(delta)
         move_and_slide()

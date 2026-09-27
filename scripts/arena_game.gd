@@ -340,6 +340,27 @@ func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> v
     camera_rig.set_subjects(player, enemy)
     hud.bind_fighters(player, enemy)
     match_running = true
+    _start_round_intro()
+
+func _start_round_intro() -> void:
+    if not is_instance_valid(player) or not is_instance_valid(enemy):
+        return
+    if DisplayServer.get_name() == "headless":
+        player.controls_enabled = true
+        enemy.controls_enabled = true
+        return
+    player.controls_enabled = false
+    enemy.controls_enabled = false
+    hud.play_round_banner("READY", Color(0.62,0.84,1.0))
+    await get_tree().create_timer(0.58, false).timeout
+    if not is_instance_valid(player) or not is_instance_valid(enemy) or not match_running:
+        return
+    hud.play_round_banner("FIGHT!", Color(1.0,0.76,0.20))
+    camera_rig.add_shake(0.28)
+    player.controls_enabled = true
+    enemy.controls_enabled = true
+    await get_tree().create_timer(0.42, false).timeout
+    hud.hide_round_banner()
 
 func _connect_fighter(fighter) -> void:
     fighter.knocked_out.connect(_on_knocked_out)
