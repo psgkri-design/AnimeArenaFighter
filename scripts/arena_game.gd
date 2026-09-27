@@ -5,6 +5,7 @@ const CameraScript = preload("res://scripts/combat_camera.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const VFXScript = preload("res://scripts/combat_vfx_pool.gd")
 const QualityScript = preload("res://scripts/quality_manager.gd")
+const AudioManagerScript = preload("res://scripts/audio_manager.gd")
 
 signal sfx_requested(cue, position)
 
@@ -18,6 +19,7 @@ var selected_difficulty: int = 1
 var match_running: bool = false
 var vfx_pool
 var quality_manager
+var audio_manager
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
 var fill_light: DirectionalLight3D
@@ -39,6 +41,11 @@ func _ready() -> void:
     quality_manager = QualityScript.new()
     quality_manager.name = "QualityManager"
     add_child(quality_manager)
+
+    audio_manager = AudioManagerScript.new()
+    audio_manager.name = "AudioManager"
+    add_child(audio_manager)
+    sfx_requested.connect(audio_manager.play_sfx)
 
     camera_rig = CameraScript.new()
     camera_rig.name = "CombatCamera"

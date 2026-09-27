@@ -57,6 +57,9 @@ func _run() -> void:
 
     _check(game.hud != null, "HUD created")
     _check(game.camera_rig != null, "combat camera created")
+    _check(game.audio_manager != null, "audio manager created")
+    if game.audio_manager != null:
+        _check(game.audio_manager.streams.size() >= 6, "procedural combat SFX loaded")
     _check(game.hud.menu_ui.visible, "character select visible on boot")
     _check(is_instance_valid(game.hud.preview_fighter), "3D character preview created")
     _check(game.hud.preview_platform_root != null, "preview platform created")

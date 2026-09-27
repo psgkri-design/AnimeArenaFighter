@@ -33,6 +33,9 @@ jobs:
           curl -fL "$ASSET_BASE/mage_texture.png" -o assets/kaykit/weapons/mage_texture.png
           curl -fL "$ASSET_BASE/knight_texture.png" -o assets/kaykit/weapons/knight_texture.png
 
+      - name: Generate original procedural SFX
+        run: python3 tools/generate_sfx.py
+
       - name: Create debug keystore
         run: |
           mkdir -p "$HOME/.android"

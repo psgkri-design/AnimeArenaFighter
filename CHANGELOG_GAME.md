@@ -461,3 +461,25 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Preview platform uses simple unshaded geometry and is disabled together with the preview viewport when combat begins.
 - Button state updates reuse existing Button nodes; no UI nodes are created during combat.
 - CI now verifies preview platform and mobile skill/Ultimate controls exist.
+
+
+## Update 26 — Original pooled combat audio
+
+### Added
+- Added six original procedurally generated combat SFX: swing, impact, dash, energy, parry and Ultimate.
+- Added a 10-voice pooled AudioStreamPlayer3D manager for spatial combat sound playback.
+- Connected the existing SFX cue hooks to actual runtime audio.
+- Added deterministic repository-side SFX generation during Android CI before Godot import/export.
+
+### Changed
+- Combat impact stack now includes real audio in addition to animation, fighter-specific VFX, hit-stop, camera impulse and Android haptics.
+- Audio cues use per-category volume/pitch tuning so Ultimate/parry/impact read more strongly than movement whooshes.
+
+### Audio
+- All generated WAV files are original procedural synthesis created by `tools/generate_sfx.py`; no copyrighted external audio is used.
+- Mono 22.05 kHz PCM keeps spatial playback and APK size lightweight.
+
+### Optimization
+- Ten AudioStreamPlayer3D nodes are created once and reused.
+- No AudioStreamPlayer nodes are instantiated or destroyed during combat.
+- CI smoke validation verifies the audio manager and all six generated cues are available before APK publication.
