@@ -68,6 +68,11 @@ func _run() -> void:
     _check(game.hud.preview_platform_root != null, "preview platform created")
     _check(game.hud.skill_buttons.size() == 4, "four mobile skill buttons created")
     _check(game.hud.ultimate_button != null, "ultimate mobile button created")
+    _check(game.hud.damage_overlay_material != null, "combined HUD feedback material created")
+    if game.hud.damage_overlay_material != null:
+        game.hud.damage_overlay_material.set_shader_parameter("speed_lines", 0.5)
+        _check(absf(float(game.hud.damage_overlay_material.get_shader_parameter("speed_lines")) - 0.5) < 0.01, "speed-line shader parameter available")
+        game.hud.damage_overlay_material.set_shader_parameter("speed_lines", 0.0)
     _check(game.hud.heavy_button != null and game.hud.dodge_button != null and game.hud.dash_button != null, "combat state mobile buttons created")
     _check(game.hud.block_button != null and game.hud.lock_button != null, "block and lock mobile buttons created")
     if is_instance_valid(game.hud.preview_fighter):

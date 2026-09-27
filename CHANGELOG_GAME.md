@@ -687,3 +687,25 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Ground raycast runs at 12.5 Hz rather than every frame.
 - No texture asset is required; the soft ellipse is generated analytically in the shader.
 - CI validates combat shadow creation and MEDIUM quality synchronization.
+
+
+## Update 37 — Quality-scaled anime speed lines
+
+### Added
+- Added radial anime speed lines to the existing fullscreen HUD feedback shader.
+- Speed-line intensity reacts to dash, dodge, very high movement speed and Ultimate attack presentation.
+- Speed-line color follows the active fighter's color identity.
+
+### Changed
+- LOW / MEDIUM / HIGH scale the speed-line intensity to 50% / 78% / 100%.
+- The effect eases in/out instead of appearing as a hard binary overlay.
+- Damage vignette, damage flash and speed lines now share one shader pass.
+
+### Graphics
+- Fast movement gains stronger peripheral motion language without obscuring the central opponent/readability area.
+- Broken radial streaks avoid a perfectly uniform starburst and read closer to stylized anime action lines.
+
+### Optimization
+- No extra fullscreen node, texture, particle system or draw pass was added.
+- The effect reuses the existing damage-overlay ColorRect and only updates scalar/color uniforms.
+- CI validates the speed-line shader parameter path.

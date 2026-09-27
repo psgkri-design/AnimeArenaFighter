@@ -80,6 +80,7 @@ var damage_overlay: ColorRect
 var damage_overlay_material: ShaderMaterial
 var last_player_health: float = -1.0
 var damage_flash: float = 0.0
+var speed_line_amount: float = 0.0
 var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
@@ -110,6 +111,19 @@ func _process(_delta: float) -> void:
         if damage_overlay_material != null:
             damage_overlay_material.set_shader_parameter("danger", danger_strength)
             damage_overlay_material.set_shader_parameter("damage_flash", damage_flash)
+
+            var planar_speed: float = Vector2(player.velocity.x,player.velocity.z).length()
+            var desired_speed_lines: float = clampf((planar_speed - 8.0) / 14.0,0.0,0.48)
+            if player.state == player.State.DASH or player.state == player.State.DODGE:
+                desired_speed_lines = 1.0
+            elif not player.current_attack.is_empty() and String(player.current_attack.get("anim_kind","")) == "ultimate":
+                desired_speed_lines = maxf(desired_speed_lines,0.72)
+
+            var quality_factor: float = [0.50,0.78,1.0][selected_quality]
+            speed_line_amount = move_toward(speed_line_amount,desired_speed_lines * quality_factor,_delta * 6.5)
+            damage_overlay_material.set_shader_parameter("speed_lines", speed_line_amount)
+            damage_overlay_material.set_shader_parameter("line_phase", Time.get_ticks_msec() * 0.008)
+            damage_overlay_material.set_shader_parameter("speed_color", player.fighter_color.lightened(0.35))
         enemy_hp.max_value = enemy.max_health
         enemy_hp.value = enemy.health
         stamina_bar.max_value = player.max_stamina
@@ -217,6 +231,9 @@ func bind_fighters(p_player, p_enemy) -> void:
     round_active = false
     last_player_health = p_player.health
     damage_flash = 0.0
+    speed_line_amount = 0.0
+    if damage_overlay_material != null:
+        damage_overlay_material.set_shader_parameter("speed_lines", 0.0)
     round_timer_label.text = "99"
 
     var player_data: Dictionary = Roster.get_data(int(p_player.variant))
