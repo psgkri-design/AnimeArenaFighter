@@ -28,6 +28,19 @@ func _audit_animations(fighter, label: String) -> void:
     print("ANIM_AUDIT ", label, ": ", ", ".join(names))
     _check(not names.is_empty(), label + " has imported AnimationPlayer clips")
 
+func _print_skeleton_bones(node: Node) -> bool:
+    if node is Skeleton3D:
+        var skeleton := node as Skeleton3D
+        var names: Array[String] = []
+        for bone_index in range(skeleton.get_bone_count()):
+            names.append(String(skeleton.get_bone_name(bone_index)))
+        print("BONE_AUDIT: ", ", ".join(names))
+        return true
+    for child in node.get_children():
+        if _print_skeleton_bones(child):
+            return true
+    return false
+
 func _run() -> void:
     var scene_resource := load("res://scenes/main.tscn") as PackedScene
     _check(scene_resource != null, "main scene loads")
@@ -70,6 +83,8 @@ func _run() -> void:
         _check(game.player.variant == variant, "selected player data propagated")
         _check(game.enemy.variant == enemy_variant, "selected enemy data propagated")
         _audit_animations(game.player, "fighter_%d" % variant)
+        if variant == 0:
+            _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")
 
         game.player.is_ai = false
         game.enemy.is_ai = false
