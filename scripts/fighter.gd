@@ -14,6 +14,15 @@ enum State { IDLE, MOVE, DASH, DODGE, ATTACK, BLOCK, STUNNED, DEAD }
 const ProjectileScript = preload("res://scripts/projectile.gd")
 const Roster = preload("res://scripts/character_data.gd")
 
+const ADULT_ANIMATION_PATH := "res://assets/quaternius/universal_animation_library_1.glb"
+const ADULT_BODY_PATHS: Array[String] = [
+    "res://assets/quaternius/Superhero_Female_FullBody.gltf",
+    "res://assets/quaternius/Superhero_Female_FullBody.gltf",
+    "res://assets/quaternius/Superhero_Male_FullBody.gltf",
+    "res://assets/quaternius/Superhero_Male_FullBody.gltf"
+]
+static var adult_animation_library_cache: AnimationLibrary = null
+
 var state: int = State.IDLE
 var is_ai: bool = false
 var ai_level: int = 1
@@ -74,6 +83,8 @@ var foot_ik_timer: float = 0.0
 var left_foot_clearance: float = -1.0
 var right_foot_clearance: float = -1.0
 var visual_quality: int = 1
+var adult_rig: bool = false
+var adult_animation_verified: bool = false
 var ground_shadow: MeshInstance3D = null
 var ground_shadow_material: ShaderMaterial = null
 var ground_shadow_timer: float = 0.0
@@ -109,10 +120,10 @@ func _ready() -> void:
     floor_snap_length = 0.2
     var cs := CollisionShape3D.new()
     var cap := CapsuleShape3D.new()
-    cap.radius = 0.48
-    cap.height = 1.85
+    cap.radius = 0.42
+    cap.height = 1.88
     cs.shape = cap
-    cs.position.y = 0.92
+    cs.position.y = 0.94
     add_child(cs)
     _build_model()
     _setup_ground_shadow()
@@ -124,8 +135,9 @@ func _build_model() -> void:
     add_child(model_root)
 
     if _try_build_external_model():
-        _decorate_external_model()
-        _add_glow()
+        if not adult_rig:
+            _decorate_external_model()
+            _add_glow()
         return
 
     match variant:
@@ -135,6 +147,72 @@ func _build_model() -> void:
         3: _build_bunny()
 
 func _try_build_external_model() -> bool:
+    if _try_build_adult_quaternius_model():
+        return true
+    return _try_build_kaykit_model()
+
+func _try_build_adult_quaternius_model() -> bool:
+    var path: String = ADULT_BODY_PATHS[variant]
+    if not ResourceLoader.exists(path) or not ResourceLoader.exists(ADULT_ANIMATION_PATH):
+        return false
+
+    var resource: Resource = load(path)
+    if not (resource is PackedScene):
+        return false
+
+    var scene := resource as PackedScene
+    var visual := scene.instantiate() as Node3D
+    if visual == null:
+        return false
+
+    visual.name = "AdultCharacter"
+    visual.rotation.y = PI
+    visual.scale = Vector3.ONE
+    visual.position = Vector3.ZERO
+    model_root.add_child(visual)
+
+    adult_rig = true
+    _stylize_external_materials(visual)
+    skeleton = _find_skeleton(visual)
+    if skeleton == null:
+        visual.queue_free()
+        adult_rig = false
+        return false
+
+    animation_player = AnimationPlayer.new()
+    animation_player.name = "AdultAnimationPlayer"
+    visual.add_child(animation_player)
+    animation_player.root_node = animation_player.get_path_to(visual)
+
+    var adult_library: AnimationLibrary = _get_adult_animation_library()
+    if adult_library == null:
+        visual.queue_free()
+        adult_rig = false
+        animation_player = null
+        skeleton = null
+        return false
+
+    animation_player.add_animation_library("", adult_library)
+    adult_animation_verified = _library_drives_current_skeleton(adult_library)
+    if not adult_animation_verified:
+        visual.queue_free()
+        adult_rig = false
+        animation_player = null
+        skeleton = null
+        return false
+
+    head_bone = _find_first_bone([&"Head", &"head"])
+    chest_bone = _find_first_bone([&"spine_03", &"chest"])
+    hand_bone = _find_first_bone([&"hand_r", &"handslot.r"])
+    left_foot_bone = _find_first_bone([&"foot_l", &"foot.l"])
+    right_foot_bone = _find_first_bone([&"foot_r", &"foot.r"])
+
+    _attach_external_weapons()
+    _setup_foot_ik()
+    _play_animation(_idle_animation(), 0.0, 1.0, true)
+    return true
+
+func _try_build_kaykit_model() -> bool:
     var paths: Array[String] = [
         "res://assets/kaykit/Rogue_Hooded.glb",
         "res://assets/kaykit/Mage.glb",
@@ -163,29 +241,85 @@ func _try_build_external_model() -> bool:
     animation_player = _find_animation_player(visual)
     skeleton = _find_skeleton(visual)
     if skeleton != null:
-        head_bone = skeleton.find_bone("head")
-        chest_bone = skeleton.find_bone("chest")
-        hand_bone = skeleton.find_bone("handslot.r")
-        left_foot_bone = skeleton.find_bone("foot.l")
-        right_foot_bone = skeleton.find_bone("foot.r")
+        head_bone = _find_first_bone([&"head"])
+        chest_bone = _find_first_bone([&"chest"])
+        hand_bone = _find_first_bone([&"handslot.r"])
+        left_foot_bone = _find_first_bone([&"foot.l"])
+        right_foot_bone = _find_first_bone([&"foot.r"])
         _attach_external_weapons()
         _setup_foot_ik()
     _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
 
+func _get_adult_animation_library() -> AnimationLibrary:
+    if adult_animation_library_cache != null:
+        return adult_animation_library_cache
+    var source_scene := load(ADULT_ANIMATION_PATH) as PackedScene
+    if source_scene == null:
+        return null
+    var source_root := source_scene.instantiate()
+    var source_player := _find_animation_player(source_root)
+    if source_player != null:
+        for library_name in source_player.get_animation_library_list():
+            var library := source_player.get_animation_library(library_name)
+            if library != null and library.has_animation("Idle_Loop") and library.has_animation("Sword_Attack"):
+                adult_animation_library_cache = library
+                break
+    source_root.free()
+    return adult_animation_library_cache
+
+func _library_drives_current_skeleton(library: AnimationLibrary) -> bool:
+    if library == null or skeleton == null:
+        return false
+    var bones: Dictionary = {}
+    for index in range(skeleton.get_bone_count()):
+        bones[String(skeleton.get_bone_name(index))] = true
+    var checked: int = 0
+    var matched: int = 0
+    var probe_names: Array[StringName] = [&"Idle_Loop", &"Sword_Attack", &"Punch_Jab"]
+    for probe_name in probe_names:
+        if not library.has_animation(probe_name):
+            continue
+        var animation := library.get_animation(probe_name)
+        if animation == null:
+            continue
+        for track in range(animation.get_track_count()):
+            if animation.track_get_type(track) != Animation.TYPE_ROTATION_3D:
+                continue
+            var path := animation.track_get_path(track)
+            if path.get_subname_count() == 0:
+                continue
+            checked += 1
+            if bones.has(String(path.get_subname(0))):
+                matched += 1
+        if checked >= 10:
+            break
+    return checked > 0 and float(matched) / float(checked) >= 0.72
+
+func _find_first_bone(candidates: Array[StringName]) -> int:
+    if skeleton == null:
+        return -1
+    for candidate in candidates:
+        var index := skeleton.find_bone(candidate)
+        if index >= 0:
+            return index
+    return -1
+
 func _attach_external_weapons() -> void:
     if skeleton == null:
         return
+    var right_hand: String = "hand_r" if adult_rig else "handslot.r"
+    var left_hand: String = "hand_l" if adult_rig else "handslot.l"
     match variant:
         0:
-            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", "handslot.r", Vector3.ZERO)
-            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", "handslot.l", Vector3(0.0, PI, 0.0))
+            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", right_hand, Vector3.ZERO)
+            _attach_weapon("res://assets/kaykit/weapons/dagger.gltf", left_hand, Vector3(0.0, PI, 0.0))
         1:
-            _attach_weapon("res://assets/kaykit/weapons/staff.gltf", "handslot.r", Vector3.ZERO)
+            _attach_weapon("res://assets/kaykit/weapons/staff.gltf", right_hand, Vector3.ZERO)
         2:
-            _attach_weapon("res://assets/kaykit/weapons/sword_2handed_color.gltf", "handslot.r", Vector3.ZERO)
+            _attach_weapon("res://assets/kaykit/weapons/sword_2handed_color.gltf", right_hand, Vector3.ZERO)
         3:
-            _attach_weapon("res://assets/kaykit/weapons/sword_1handed.gltf", "handslot.r", Vector3.ZERO)
+            _attach_weapon("res://assets/kaykit/weapons/sword_1handed.gltf", right_hand, Vector3.ZERO)
 
 func _attach_weapon(path: String, bone_name: String, local_rotation: Vector3) -> void:
     if not ResourceLoader.exists(path):
@@ -209,6 +343,8 @@ func _attach_weapon(path: String, bone_name: String, local_rotation: Vector3) ->
         return
     weapon.name = "WeaponVisual"
     weapon.rotation = local_rotation
+    if adult_rig:
+        weapon.scale = Vector3.ONE * 1.28
     attachment.add_child(weapon)
     _stylize_external_materials(weapon)
     weapon_attachment_count += 1
@@ -324,8 +460,8 @@ func _setup_foot_ik() -> void:
 
     left_foot_ik = SkeletonIK3D.new()
     left_foot_ik.name = "FootIKLeft"
-    left_foot_ik.root_bone = &"upperleg.l"
-    left_foot_ik.tip_bone = &"foot.l"
+    left_foot_ik.root_bone = &"thigh_l" if adult_rig else &"upperleg.l"
+    left_foot_ik.tip_bone = &"foot_l" if adult_rig else &"foot.l"
     left_foot_ik.override_tip_basis = false
     left_foot_ik.max_iterations = 4
     left_foot_ik.min_distance = 0.015
@@ -336,8 +472,8 @@ func _setup_foot_ik() -> void:
 
     right_foot_ik = SkeletonIK3D.new()
     right_foot_ik.name = "FootIKRight"
-    right_foot_ik.root_bone = &"upperleg.r"
-    right_foot_ik.tip_bone = &"foot.r"
+    right_foot_ik.root_bone = &"thigh_r" if adult_rig else &"upperleg.r"
+    right_foot_ik.tip_bone = &"foot_r" if adult_rig else &"foot.r"
     right_foot_ik.override_tip_basis = false
     right_foot_ik.max_iterations = 4
     right_foot_ik.min_distance = 0.015
@@ -447,10 +583,12 @@ func _idle_animation() -> StringName:
 
 func _movement_animation() -> StringName:
     if not is_on_floor():
-        return &"Jump_Idle"
+        return &"Jump_Loop" if adult_rig else &"Jump_Idle"
     var horizontal := Vector3(velocity.x, 0.0, velocity.z)
     if horizontal.length() < 0.3:
         return _idle_animation()
+    if adult_rig:
+        return &"Walk_Loop" if horizontal.length() < 4.2 else &"Jog_Fwd_Loop"
     var local_direction: Vector3 = global_basis.inverse() * horizontal.normalized()
     if local_direction.z > 0.45:
         return &"Walking_Backwards"
@@ -504,12 +642,53 @@ func _attack_animation(kind: String, index: int) -> StringName:
         return _idle_animation()
     return clips[posmod(index, clips.size())]
 
+func _adult_animation_alias(name: StringName) -> StringName:
+    var aliases := {
+        &"Idle": &"Idle_Loop",
+        &"2H_Melee_Idle": &"Sword_Idle",
+        &"Unarmed_Idle": &"Idle_Loop",
+        &"Jump_Idle": &"Jump_Loop",
+        &"Running_A": &"Jog_Fwd_Loop",
+        &"Walking_Backwards": &"Walk_Loop",
+        &"Running_Strafe_Left": &"Jog_Fwd_Loop",
+        &"Running_Strafe_Right": &"Jog_Fwd_Loop",
+        &"Dodge_Backward": &"Roll",
+        &"Dodge_Forward": &"Roll",
+        &"Dodge_Left": &"Roll",
+        &"Dodge_Right": &"Roll",
+        &"Death_A": &"Death01",
+        &"Cheer": &"Dance_Loop",
+        &"Blocking": &"Sword_Idle",
+        &"Block_Hit": &"Hit_Chest",
+        &"Lie_Down": &"Death01",
+        &"Lie_StandUp": &"Jump_Land",
+        &"Hit_A": &"Hit_Chest",
+        &"Hit_B": &"Hit_Head",
+        &"Dualwield_Melee_Attack_Slice": &"Sword_Attack",
+        &"Dualwield_Melee_Attack_Chop": &"Sword_Attack",
+        &"Dualwield_Melee_Attack_Stab": &"Sword_Attack",
+        &"1H_Melee_Attack_Slice_Diagonal": &"Sword_Attack",
+        &"1H_Melee_Attack_Chop": &"Sword_Attack",
+        &"1H_Melee_Attack_Stab": &"Sword_Attack",
+        &"2H_Melee_Attack_Slice": &"Sword_Attack",
+        &"2H_Melee_Attack_Chop": &"Sword_Attack",
+        &"2H_Melee_Attack_Stab": &"Sword_Attack",
+        &"2H_Melee_Attack_Spin": &"Sword_Attack",
+        &"2H_Melee_Attack_Spinning": &"Sword_Attack",
+        &"Unarmed_Melee_Attack_Punch_A": &"Punch_Jab",
+        &"Unarmed_Melee_Attack_Punch_B": &"Punch_Cross",
+        &"Unarmed_Melee_Attack_Kick": &"Punch_Cross",
+        &"Spellcast_Long": &"Spell_Simple_Shoot",
+        &"Spellcast_Shoot": &"Spell_Simple_Shoot"
+    }
+    return aliases.get(name, name)
+
 func _play_animation(name: StringName, blend: float = 0.12, speed: float = 1.0, force: bool = false) -> void:
     if animation_player == null:
         return
-    var selected: StringName = name
+    var selected: StringName = _adult_animation_alias(name) if adult_rig else name
     if not animation_player.has_animation(selected):
-        selected = _idle_animation()
+        selected = _adult_animation_alias(_idle_animation()) if adult_rig else _idle_animation()
     if not animation_player.has_animation(selected):
         return
     if not force and last_animation == selected and animation_player.is_playing():

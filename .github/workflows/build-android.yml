@@ -33,6 +33,22 @@ jobs:
           curl -fL "$ASSET_BASE/mage_texture.png" -o assets/kaykit/weapons/mage_texture.png
           curl -fL "$ASSET_BASE/knight_texture.png" -o assets/kaykit/weapons/knight_texture.png
 
+          # Adult-proportion Quaternius bodies + UAL1 clips. Pinned CC0 mirrors.
+          mkdir -p assets/quaternius
+          QBASE="https://raw.githubusercontent.com/glashoff/noob_tube/e191d4dfa0569b800563e7cd2b7db346355358ed/assets/characters"
+          for FILE in Superhero_Male_FullBody.gltf Superhero_Male_FullBody.bin Superhero_Female_FullBody.gltf Superhero_Female_FullBody.bin \
+                      T_Eye_Brown.png T_Eye_Normal.png T_Hair_1_BaseColor.png T_Hair_1_Normal.png T_Hair_2_BaseColor.png T_Hair_2_Normal.png \
+                      T_Superhero_Male_Dark.png T_Superhero_Male_Normal.png T_Superhero_Male_Roughness.png \
+                      T_Superhero_Female_Dark_BaseColor.png T_Superhero_Female_Normal.png T_Superhero_Female_Roughness.png; do
+            curl -fL "$QBASE/$FILE" -o "assets/quaternius/$FILE"
+          done
+          curl -fL "https://raw.githubusercontent.com/glashoff/noob_tube/e191d4dfa0569b800563e7cd2b7db346355358ed/assets/animations/universal_animation_library_1.glb" \
+            -o assets/quaternius/universal_animation_library_1.glb
+          curl -fL "https://raw.githubusercontent.com/glashoff/noob_tube/e191d4dfa0569b800563e7cd2b7db346355358ed/assets/CREDITS.md" \
+            -o assets/quaternius/SOURCE_CREDITS.md
+          curl -fL "https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/QUATERNIUS-LICENSE.txt" \
+            -o assets/quaternius/QUATERNIUS_LICENSE.txt
+
       - name: Generate original procedural SFX
         run: python3 tools/generate_sfx.py
 

@@ -35,3 +35,17 @@ The same KayKit Character Pack: Adventures 1.0 CC0 license also covers the weapo
 - Shared KayKit texture atlases: `rogue_texture.png`, `mage_texture.png`, `knight_texture.png`.
 
 These are fetched from the pack's `Assets/gltf` directory during CI and attached to the rig's authored `handslot.l/r` bones.
+
+
+## Quaternius Universal Base Characters + Universal Animation Library 1 — adult fighter rig
+
+- **Author:** Quaternius
+- **Base-character pack:** Universal Base Characters (Standard)
+- **Animation pack:** Universal Animation Library 1 (Standard, non-root-motion GLB)
+- **Primary author site:** https://quaternius.com
+- **Pinned redistribution mirror used by CI:** `glashoff/noob_tube@e191d4dfa0569b800563e7cd2b7db346355358ed`
+- **Files used:** `Superhero_Male_FullBody.gltf/.bin`, `Superhero_Female_FullBody.gltf/.bin`, their eye/hair/body textures, and `universal_animation_library_1.glb`.
+- **License:** CC0 1.0 Universal for the archived Standard packs, as recorded in the pinned mirror's `assets/CREDITS.md` and the bundled Quaternius license notice copied to `assets/quaternius/QUATERNIUS_LICENSE.txt`.
+- **Why this source:** the pinned mirror documents that the body and UAL1 animation file share a bit-identical 65-joint Unreal/Godot humanoid rig. This allows adult 1.81 m proportions without runtime retarget ambiguity.
+- **Used for:** primary full-height player/enemy visual rigs and locomotion/combat animation library.
+- **Fallback:** KayKit characters remain available only if the adult Quaternius assets fail to load.

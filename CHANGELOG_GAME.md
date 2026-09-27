@@ -727,3 +727,36 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed
 - Release metadata now matches the latest validated post-v0.3.2 runtime revision.
+
+
+## Update 39 — Adult-proportion full-height fighter overhaul
+
+### Added
+- Added Quaternius Universal Base Characters Superhero Male/Female as the new primary fighter body source.
+- Added Quaternius Universal Animation Library 1 as a shared 43-clip adult humanoid animation source.
+- Added runtime verification that the UAL animation tracks actually target the loaded 65-joint body skeleton.
+- Added dual bone-name support so adult Quaternius rigs and legacy KayKit fallback rigs both support hand VFX, weapon attachments and foot IK.
+
+### Changed
+- KayKit character bodies are now fallback-only instead of the primary visual characters.
+- Fighter collision capsule was narrowed to better match an adult human silhouette.
+- Adult weapons attach to `hand_l/hand_r` and are scaled for the larger full-height body.
+- Oversized primitive horns/ears/armor decorations and per-character toy-like OmniLight are skipped on adult bodies.
+- Combat camera is substantially closer: base FOV 58 instead of 68, lock-on distance reduced from roughly 7–12 m to 5.15–8.25 m.
+- Camera focus height now follows an adult torso/head line so fighters occupy much more of the screen.
+
+### Animation
+- Adult UAL aliases map existing combat states to `Idle_Loop`, `Walk_Loop`, `Jog_Fwd_Loop`, `Jump_Loop`, `Roll`, `Sword_Attack`, `Punch_Jab`, `Punch_Cross`, `Spell_Simple_Shoot`, `Hit_Chest`, `Hit_Head`, `Death01` and `Dance_Loop`.
+- Existing responsive code-driven movement is preserved; the non-root-motion UAL1 pack is used.
+
+### Graphics
+- Fighter silhouette target changes from short stylized/chibi proportions to approximately 1.81 m adult humanoid proportions with textured hair, eyes, normals and roughness maps.
+- Existing toon diffuse/specular/rim treatment is applied on top of the textured adult materials.
+
+### Optimization
+- One shared AnimationLibrary reference is cached and reused by every adult fighter.
+- KayKit fallback remains available without adding a second runtime animation system.
+
+### Fixed
+- Character scale/framing no longer makes combatants read as miniature figures inside an oversized arena.
+- CI now fails if any fighter falls back from the adult rig or if the adult animation library does not drive the target skeleton.

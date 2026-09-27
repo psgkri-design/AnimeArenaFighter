@@ -5,8 +5,8 @@ var player = null
 var target = null
 var yaw: float = 0.0
 var pitch: float = deg_to_rad(-12.0)
-var free_distance: float = 8.5
-var height: float = 2.2
+var free_distance: float = 6.15
+var height: float = 1.55
 var look_sensitivity: float = 0.006
 var shake_strength: float = 0.0
 var shake_time: float = 0.0
@@ -28,7 +28,7 @@ func _ready() -> void:
     camera = Camera3D.new()
     camera.name = "MainCamera"
     camera.current = true
-    camera.fov = 68.0
+    camera.fov = 58.0
     camera.near = 0.08
     camera.far = 220.0
     add_child(camera)
@@ -92,11 +92,11 @@ func _physics_process(delta: float) -> void:
         _update_cinematic(delta)
         return
 
-    var focus: Vector3 = player.global_position + Vector3.UP * 1.15
+    var focus: Vector3 = player.global_position + Vector3.UP * 1.28
     var desired: Vector3 = Vector3.ZERO
 
     if player.lock_on and is_instance_valid(target):
-        var target_focus: Vector3 = target.global_position + Vector3.UP * 1.05
+        var target_focus: Vector3 = target.global_position + Vector3.UP * 1.22
         var separation: float = player.global_position.distance_to(target.global_position)
         var center: Vector3 = focus.lerp(target_focus, 0.34)
         var away: Vector3 = player.global_position - target.global_position
@@ -105,9 +105,9 @@ func _physics_process(delta: float) -> void:
             away = Vector3.BACK
         away = away.normalized()
         var side: Vector3 = away.cross(Vector3.UP).normalized()
-        var distance: float = clampf(7.0 + separation * 0.17, 7.0, 12.0)
-        desired = center + away * distance + side * 1.2 + Vector3.UP * (2.6 + separation * 0.045)
-        focus = center + Vector3.UP * 0.35
+        var distance: float = clampf(5.05 + separation * 0.115, 5.15, 8.25)
+        desired = center + away * distance + side * 0.72 + Vector3.UP * (1.72 + separation * 0.030)
+        focus = center + Vector3.UP * 0.28
     else:
         var orbit: Vector3 = Vector3(0,0,free_distance)
         orbit = orbit.rotated(Vector3.RIGHT,pitch)
@@ -127,8 +127,8 @@ func _physics_process(delta: float) -> void:
         camera.position = camera.position.lerp(Vector3.ZERO, clampf(delta * 15.0, 0.0, 1.0))
 
     var player_speed: float = Vector2(player.velocity.x, player.velocity.z).length()
-    var movement_fov: float = clampf(player_speed * 0.24, 0.0, 5.0)
-    var target_fov: float = 68.0 + movement_fov + fov_impulse
+    var movement_fov: float = clampf(player_speed * 0.20, 0.0, 4.0)
+    var target_fov: float = 58.0 + movement_fov + fov_impulse
     fov_impulse = move_toward(fov_impulse, 0.0, delta * 10.0)
     camera.fov = lerpf(camera.fov, target_fov, clampf(delta * 6.5, 0.0, 1.0))
 
@@ -154,9 +154,9 @@ func _update_cinematic(delta: float) -> void:
     global_position = global_position.lerp(desired, clampf(delta * 13.5, 0.0, 1.0))
     camera.look_at(center + Vector3.UP * 0.08, Vector3.UP)
 
-    var cinematic_fov: float = lerpf(50.0, 57.0, progress)
+    var cinematic_fov: float = lerpf(46.0, 52.0, progress)
     if progress > 0.72:
-        cinematic_fov = lerpf(cinematic_fov, 64.0, (progress - 0.72) / 0.28)
+        cinematic_fov = lerpf(cinematic_fov, 58.0, (progress - 0.72) / 0.28)
     camera.fov = lerpf(camera.fov, cinematic_fov, clampf(delta * 12.0, 0.0, 1.0))
 
 func _update_ko(delta: float) -> void:

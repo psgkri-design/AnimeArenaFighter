@@ -57,6 +57,8 @@ func _run() -> void:
 
     _check(game.hud != null, "HUD created")
     _check(game.camera_rig != null, "combat camera created")
+    _check(absf(game.camera_rig.camera.fov - 58.0) < 0.5, "adult camera base FOV is 58")
+    _check(game.camera_rig.free_distance < 6.5, "free camera moved closer to full-height fighter")
     _check(game.projectile_pool != null, "projectile pool created")
     if game.projectile_pool != null:
         _check(game.projectile_pool.total_count() == 20, "20 projectiles preallocated")
@@ -100,6 +102,10 @@ func _run() -> void:
         _check(game.hud.round_active, "round timer active after FIGHT gate")
         _check(not game.hud.menu_ui.visible and game.hud.game_ui.visible, "battle HUD active")
         _check(game.player.variant == variant, "selected player data propagated")
+        _check(game.player.adult_rig, "adult-proportion Quaternius rig active for variant %d" % variant)
+        _check(game.player.adult_animation_verified, "adult animation library drives skeleton for variant %d" % variant)
+        _check(game.player.animation_player != null and game.player.animation_player.has_animation("Idle_Loop"), "adult Idle_Loop available")
+        _check(game.player.animation_player.has_animation("Sword_Attack"), "adult Sword_Attack available")
         _check(game.enemy.variant == enemy_variant, "selected enemy data propagated")
         _check(game.player.weapon_attachment_count >= 1, "fighter %d has bone-attached weapon asset" % variant)
         _audit_animations(game.player, "fighter_%d" % variant)
