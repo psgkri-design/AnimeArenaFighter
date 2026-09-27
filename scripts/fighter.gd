@@ -624,7 +624,7 @@ func _find_animation_player_with_most_clips(node: Node) -> AnimationPlayer:
     while not pending.is_empty():
         var current: Node = pending.pop_back() as Node
         if current is AnimationPlayer:
-            var candidate := current as AnimationPlayer
+            var candidate: AnimationPlayer = current as AnimationPlayer
             var count: int = candidate.get_animation_list().size()
             if count > best_count:
                 best = candidate
