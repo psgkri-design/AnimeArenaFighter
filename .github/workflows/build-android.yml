@@ -62,6 +62,16 @@ jobs:
           fi
           exit "$GODOT_EXIT"
 
+      - name: Run full combat smoke test
+        shell: bash
+        run: |
+          GODOT_BIN="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*' | head -n 1)"
+          "$GODOT_BIN" --headless --path . --script res://scripts/ci_smoke_test.gd 2>&1 | tee godot-smoke-test.log
+          if grep -Eqi "SCRIPT ERROR:|Parse Error:|Compile Error:|Failed to load script|SMOKE RESULT: FAIL" godot-smoke-test.log; then
+            echo "Full combat smoke validation failed."
+            exit 1
+          fi
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
