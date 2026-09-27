@@ -62,6 +62,18 @@ VERSION 0.2.1 — 2026-09-27 — REAL 3D ASSET INTEGRATION
 - Added ASSET_SOURCES.txt to track external asset provenance and licenses.
 
 ==================================================
+VERSION 0.2.1 — 2026-09-27 — ARENA / HUD POLISH
+==================================================
+- Added a 99-second round timer and timeout result logic.
+- Added live fighter names to the in-match HUD.
+- Added the selected fighter's four skill names to the combat HUD.
+- Added a low-poly cyber-city skyline around the arena.
+- Added emissive neon tower bands and four outer arena gates.
+- Kept the backdrop lightweight: static meshes, no extra shadow-casting lights.
+- Kept KayKit CC0 character models as the Android-build visual base with procedural fighter-specific overlays.
+- Verified Quaternius Universal Base Characters (CC0) as a future higher-detail character source.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.

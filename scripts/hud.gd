@@ -3,6 +3,7 @@ extends CanvasLayer
 signal start_requested(player_variant, enemy_variant, difficulty)
 signal restart_requested
 signal menu_requested
+signal time_expired
 
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
 const Roster = preload("res://scripts/character_data.gd")
@@ -39,6 +40,12 @@ var combo_label: Label
 var result_label: Label
 var fps_label: Label
 var controls_ui: Control
+var combat_player_name: Label
+var combat_enemy_name: Label
+var round_timer_label: Label
+var skill_strip_label: Label
+var round_time: float = 99.0
+var timer_finished: bool = false
 
 func _ready() -> void:
     _build_menu()
@@ -60,6 +67,12 @@ func _process(_delta: float) -> void:
         ultimate_bar.max_value = 100.0
         ultimate_bar.value = player.ultimate
         fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+        if not result_ui.visible and not get_tree().paused and not timer_finished:
+            round_time = maxf(0.0, round_time - _delta)
+            round_timer_label.text = "%02d" % int(ceil(round_time))
+            if round_time <= 0.0:
+                timer_finished = true
+                time_expired.emit()
 
 func bind_fighters(p_player, p_enemy) -> void:
     player = p_player
@@ -70,6 +83,19 @@ func bind_fighters(p_player, p_enemy) -> void:
     game_ui.visible = true
     controls_ui.visible = true
     get_tree().paused = false
+    round_time = 99.0
+    timer_finished = false
+    round_timer_label.text = "99"
+
+    var player_data: Dictionary = Roster.get_data(int(p_player.variant))
+    var enemy_data: Dictionary = Roster.get_data(int(p_enemy.variant))
+    combat_player_name.text = player_data.name
+    combat_enemy_name.text = enemy_data.name
+    combat_player_name.add_theme_color_override("font_color", player_data.color.lightened(0.24))
+    combat_enemy_name.add_theme_color_override("font_color", enemy_data.color.lightened(0.24))
+
+    var skills: Array = player_data.skills
+    skill_strip_label.text = "S1  %s    S2  %s    S3  %s    S4  %s" % [skills[0], skills[1], skills[2], skills[3]]
     set_combo(0)
 
 func set_combo(value: int) -> void:
@@ -263,10 +289,19 @@ func _build_game_ui() -> void:
     enemy_hp = _bar(Vector2(1170,55), Vector2(680,34), Color(1.0,0.18,0.25))
     game_ui.add_child(enemy_hp)
 
-    var p_name := _label("PLAYER",Vector2(70,18),24,Color(0.72,0.88,1.0))
-    game_ui.add_child(p_name)
-    var e_name := _label("ENEMY",Vector2(1740,18),24,Color(1.0,0.72,0.74))
-    game_ui.add_child(e_name)
+    combat_player_name = _label("PLAYER",Vector2(70,15),24,Color(0.72,0.88,1.0))
+    combat_player_name.size = Vector2(680,36)
+    game_ui.add_child(combat_player_name)
+
+    combat_enemy_name = _label("ENEMY",Vector2(1170,15),24,Color(1.0,0.72,0.74))
+    combat_enemy_name.size = Vector2(680,36)
+    combat_enemy_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    game_ui.add_child(combat_enemy_name)
+
+    round_timer_label = _label("99",Vector2(860,24),42,Color(1.0,0.90,0.42))
+    round_timer_label.size = Vector2(200,58)
+    round_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    game_ui.add_child(round_timer_label)
 
     stamina_bar = _bar(Vector2(70,98),Vector2(420,22),Color(0.35,1.0,0.45))
     game_ui.add_child(stamina_bar)
@@ -275,7 +310,11 @@ func _build_game_ui() -> void:
     ultimate_bar = _bar(Vector2(70,162),Vector2(420,22),Color(1.0,0.72,0.08))
     game_ui.add_child(ultimate_bar)
 
-    combo_label = _label("",Vector2(0,170),34,Color(1.0,0.88,0.35))
+    skill_strip_label = _label("",Vector2(70,198),16,Color(0.68,0.78,0.92))
+    skill_strip_label.size = Vector2(980,30)
+    game_ui.add_child(skill_strip_label)
+
+    combo_label = _label("",Vector2(0,215),34,Color(1.0,0.88,0.35))
     combo_label.size = Vector2(1920,55)
     combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     game_ui.add_child(combo_label)

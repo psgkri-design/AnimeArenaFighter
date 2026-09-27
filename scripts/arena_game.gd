@@ -32,6 +32,7 @@ func _ready() -> void:
     hud.start_requested.connect(_start_match)
     hud.restart_requested.connect(_restart_match)
     hud.menu_requested.connect(_return_to_menu)
+    hud.time_expired.connect(_on_time_expired)
 
 func _build_world() -> void:
     var environment_node := WorldEnvironment.new()
@@ -107,6 +108,86 @@ func _build_arena() -> void:
         var angle := TAU * float(i) / 12.0 + TAU / 24.0
         var pos := Vector3(cos(angle) * 21.8, 1.7, sin(angle) * 21.8)
         _add_pillar(arena_root, pos, i % 2 == 0)
+
+    _build_city_backdrop(arena_root)
+
+func _build_city_backdrop(parent: Node3D) -> void:
+    for i in range(16):
+        var angle := TAU * float(i) / 16.0
+        var radius := 35.0 + float((i * 7) % 5) * 2.6
+        var height := 7.0 + float((i * 11) % 9) * 1.25
+        var width := 3.6 + float(i % 3) * 0.7
+        var accent := Color(0.08,0.48,1.0) if i % 2 == 0 else Color(1.0,0.08,0.34)
+        var pos := Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+        _add_city_tower(parent, pos, height, width, accent)
+
+    for i in range(4):
+        var angle := TAU * float(i) / 4.0 + PI * 0.25
+        var pos := Vector3(cos(angle) * 29.0, 0.0, sin(angle) * 29.0)
+        _add_neon_gate(parent, pos, -angle + PI * 0.5, i % 2 == 0)
+
+func _add_city_tower(parent: Node3D, pos: Vector3, height: float, width: float, accent: Color) -> void:
+    var body := MeshInstance3D.new()
+    var body_mesh := BoxMesh.new()
+    body_mesh.size = Vector3(width, height, width * 0.82)
+    body.mesh = body_mesh
+    body.position = pos + Vector3.UP * (height * 0.5 - 0.25)
+    body.look_at(Vector3(0, body.position.y, 0), Vector3.UP)
+
+    var body_mat := StandardMaterial3D.new()
+    body_mat.albedo_color = Color(0.018,0.025,0.052)
+    body_mat.metallic = 0.48
+    body_mat.roughness = 0.42
+    body.material_override = body_mat
+    parent.add_child(body)
+
+    for band_index in range(2):
+        var band := MeshInstance3D.new()
+        var band_mesh := BoxMesh.new()
+        band_mesh.size = Vector3(width * 1.04, 0.13, width * 0.86)
+        band.mesh = band_mesh
+        band.position = pos + Vector3.UP * (height * (0.35 + band_index * 0.34))
+        band.rotation.y = body.rotation.y
+        var band_mat := StandardMaterial3D.new()
+        band_mat.albedo_color = accent.darkened(0.55)
+        band_mat.emission_enabled = true
+        band_mat.emission = accent
+        band_mat.emission_energy_multiplier = 1.7
+        band.material_override = band_mat
+        parent.add_child(band)
+
+func _add_neon_gate(parent: Node3D, pos: Vector3, rot_y: float, blue: bool) -> void:
+    var accent := Color(0.10,0.58,1.0) if blue else Color(1.0,0.10,0.36)
+    var gate := Node3D.new()
+    gate.position = pos
+    gate.rotation.y = rot_y
+    parent.add_child(gate)
+
+    for x in [-2.4, 2.4]:
+        var post := MeshInstance3D.new()
+        var post_mesh := BoxMesh.new()
+        post_mesh.size = Vector3(0.32, 5.6, 0.42)
+        post.mesh = post_mesh
+        post.position = Vector3(x,2.8,0)
+        post.material_override = _neon_material(accent)
+        gate.add_child(post)
+
+    var beam := MeshInstance3D.new()
+    var beam_mesh := BoxMesh.new()
+    beam_mesh.size = Vector3(5.2,0.32,0.42)
+    beam.mesh = beam_mesh
+    beam.position = Vector3(0,5.45,0)
+    beam.material_override = _neon_material(accent)
+    gate.add_child(beam)
+
+func _neon_material(color: Color) -> StandardMaterial3D:
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color.darkened(0.45)
+    mat.emission_enabled = true
+    mat.emission = color
+    mat.emission_energy_multiplier = 1.9
+    mat.roughness = 0.30
+    return mat
 
 func _add_arena_disc(parent: Node3D, radius: float, y: float, color: Color, height_value: float) -> void:
     var mesh_instance := MeshInstance3D.new()
@@ -217,6 +298,19 @@ func _on_knocked_out(loser) -> void:
     match_running = false
     camera_rig.add_shake(2.0)
     hud.show_result("K.O.\nVICTORY" if loser == enemy else "K.O.\nDEFEAT")
+
+func _on_time_expired() -> void:
+    if not match_running or not is_instance_valid(player) or not is_instance_valid(enemy):
+        return
+    match_running = false
+    var player_ratio: float = player.health / maxf(1.0, player.max_health)
+    var enemy_ratio: float = enemy.health / maxf(1.0, enemy.max_health)
+    if absf(player_ratio - enemy_ratio) < 0.001:
+        hud.show_result("TIME\nDRAW")
+    elif player_ratio > enemy_ratio:
+        hud.show_result("TIME\nVICTORY")
+    else:
+        hud.show_result("TIME\nDEFEAT")
 
 func _on_impact(position: Vector3, strength: float, color: Color) -> void:
     camera_rig.add_shake(strength)
