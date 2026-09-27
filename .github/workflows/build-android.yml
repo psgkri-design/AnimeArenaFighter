@@ -44,6 +44,24 @@ jobs:
           export_debug: true
           cache: true
 
+      - name: Validate game startup and GDScript
+        shell: bash
+        run: |
+          GODOT_BIN="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*' | head -n 1)"
+          if [ -z "$GODOT_BIN" ]; then
+            echo "Godot executable not found after export step."
+            exit 1
+          fi
+          set +e
+          "$GODOT_BIN" --headless --path . --quit-after 5 2>&1 | tee godot-runtime-check.log
+          GODOT_EXIT=${PIPESTATUS[0]}
+          set -e
+          if grep -Eqi "SCRIPT ERROR:|Parse Error:|Compile Error:|Failed to load script" godot-runtime-check.log; then
+            echo "Godot script validation failed."
+            exit 1
+          fi
+          exit "$GODOT_EXIT"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

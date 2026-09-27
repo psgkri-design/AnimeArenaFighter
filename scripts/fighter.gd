@@ -433,12 +433,11 @@ func _try_skill(index:int)->bool:
     var costs:Array[float]=[24.0,30.0,36.0,45.0]
     if skill_cooldowns[index]>0.0 or energy<costs[index]:return false
     energy-=costs[index]
-    var skill_damage := [
-        [90.0,120.0,150.0,185.0],
-        [125.0,90.0,165.0,210.0],
-        [95.0,145.0,190.0,240.0],
-        [110.0,115.0,160.0,205.0]
-    ][variant]
+    var skill_damage: Array[float] = [90.0,120.0,150.0,185.0]
+    match variant:
+        1: skill_damage = [125.0,90.0,165.0,210.0]
+        2: skill_damage = [95.0,145.0,190.0,240.0]
+        3: skill_damage = [110.0,115.0,160.0,205.0]
     match index:
         0:
             skill_cooldowns[index]=4.0

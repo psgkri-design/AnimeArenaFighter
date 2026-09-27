@@ -74,6 +74,15 @@ VERSION 0.2.1 — 2026-09-27 — ARENA / HUD POLISH
 - Verified Quaternius Universal Base Characters (CC0) as a future higher-detail character source.
 
 ==================================================
+VERSION 0.2.2 — 2026-09-27 — START BATTLE HOTFIX
+==================================================
+- Fixed a GDScript parse error in fighter.gd that prevented combat logic from loading correctly after pressing START BATTLE.
+- Replaced ambiguous nested-array type inference for skill damage with an explicit Array[float] per fighter variant.
+- Added a CI runtime/GDScript validation step after Android export.
+- Android builds now fail if Godot reports SCRIPT ERROR, Parse Error, Compile Error or a failed script load.
+- This prevents a broken APK from being published as a successful build.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.
