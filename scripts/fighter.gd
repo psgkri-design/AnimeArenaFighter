@@ -275,15 +275,42 @@ func _get_adult_animation_library() -> AnimationLibrary:
         source_root.free()
         return null
 
+    var loop_aliases := {
+        "Idle": "Idle_Loop",
+        "Crouch_Fwd": "Crouch_Fwd_Loop",
+        "Crouch_Idle": "Crouch_Idle_Loop",
+        "Dance": "Dance_Loop",
+        "Driving": "Driving_Loop",
+        "Idle_Talking": "Idle_Talking_Loop",
+        "Idle_Torch": "Idle_Torch_Loop",
+        "Jog_Fwd": "Jog_Fwd_Loop",
+        "Pistol_Idle": "Pistol_Idle_Loop",
+        "Push": "Push_Loop",
+        "Sitting_Idle": "Sitting_Idle_Loop",
+        "Sitting_Talking": "Sitting_Talking_Loop",
+        "Spell_Simple_Idle": "Spell_Simple_Idle_Loop",
+        "Sprint": "Sprint_Loop",
+        "Swim_Fwd": "Swim_Fwd_Loop",
+        "Swim_Idle": "Swim_Idle_Loop",
+        "Walk_Formal": "Walk_Formal_Loop",
+        "Walk": "Walk_Loop",
+        "Jump": "Jump_Loop"
+    }
+
     var merged := AnimationLibrary.new()
     for animation_name in source_player.get_animation_list():
         var animation := source_player.get_animation(animation_name)
         if animation == null:
             continue
         var parts := String(animation_name).split("/")
-        var clean_name := StringName(parts[parts.size() - 1])
+        var clean_text: String = String(parts[parts.size() - 1])
+        var clean_name := StringName(clean_text)
         if not merged.has_animation(clean_name):
             merged.add_animation(clean_name, animation)
+        if loop_aliases.has(clean_text):
+            var alias_name := StringName(loop_aliases[clean_text])
+            if not merged.has_animation(alias_name):
+                merged.add_animation(alias_name, animation)
 
     source_root.free()
     if merged.has_animation("Idle_Loop") and merged.has_animation("Sword_Attack"):
