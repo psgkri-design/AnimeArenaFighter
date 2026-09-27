@@ -26,6 +26,7 @@ func apply_preset(root: Node, level: int, vfx_pool = null) -> void:
             viewport.positional_shadow_atlas_size = 2048
 
     _apply_light_quality(root)
+    _apply_environment_quality(root)
 
     if vfx_pool != null and vfx_pool.has_method("set_quality"):
         vfx_pool.set_quality(current_level)
@@ -42,3 +43,27 @@ func _apply_light_quality(root: Node) -> void:
 
 func preset_name() -> String:
     return ["LOW", "MEDIUM", "HIGH"][current_level]
+
+
+func _apply_environment_quality(root: Node) -> void:
+    if root is WorldEnvironment:
+        var world := root as WorldEnvironment
+        if world.environment != null:
+            match current_level:
+                Preset.LOW:
+                    world.environment.glow_enabled = false
+                    world.environment.fog_enabled = false
+                Preset.MEDIUM:
+                    world.environment.glow_enabled = true
+                    world.environment.glow_bloom = 0.10
+                    world.environment.glow_intensity = 0.16
+                    world.environment.fog_enabled = true
+                    world.environment.fog_density = 0.0026
+                Preset.HIGH:
+                    world.environment.glow_enabled = true
+                    world.environment.glow_bloom = 0.16
+                    world.environment.glow_intensity = 0.24
+                    world.environment.fog_enabled = true
+                    world.environment.fog_density = 0.0038
+    for child in root.get_children():
+        _apply_environment_quality(child)

@@ -58,8 +58,17 @@ func _build_world() -> void:
     environment.background_color = Color(0.012, 0.018, 0.045)
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     environment.ambient_light_color = Color(0.20, 0.27, 0.43)
-    environment.ambient_light_energy = 0.65
+    environment.ambient_light_energy = 0.72
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    environment.glow_enabled = true
+    environment.glow_bloom = 0.12
+    environment.glow_intensity = 0.20
+    environment.fog_enabled = true
+    environment.fog_light_color = Color(0.08, 0.12, 0.24)
+    environment.fog_light_energy = 0.52
+    environment.fog_density = 0.0032
+    environment.fog_depth_begin = 22.0
+    environment.fog_depth_end = 95.0
     environment_node.environment = environment
     add_child(environment_node)
 
@@ -115,6 +124,7 @@ func _build_arena() -> void:
     _add_arena_disc(arena_root, 20.0, -0.015, Color(0.03, 0.09, 0.19), 0.03)
     _add_arena_disc(arena_root, 12.0, 0.01, Color(0.06, 0.12, 0.24), 0.025)
     _add_arena_disc(arena_root, 4.2, 0.035, Color(0.10, 0.20, 0.34), 0.02)
+    _add_floor_linework(arena_root)
 
     for i in range(16):
         var angle := TAU * float(i) / 16.0
@@ -127,6 +137,52 @@ func _build_arena() -> void:
         _add_pillar(arena_root, pos, i % 2 == 0)
 
     _build_city_backdrop(arena_root)
+
+func _add_floor_linework(parent: Node3D) -> void:
+    var instance := MultiMeshInstance3D.new()
+    instance.name = "ArenaLinework"
+
+    var line_mesh := BoxMesh.new()
+    line_mesh.size = Vector3(1.0, 0.025, 1.0)
+
+    var multi := MultiMesh.new()
+    multi.transform_format = MultiMesh.TRANSFORM_3D
+    multi.mesh = line_mesh
+
+    var transforms: Array[Transform3D] = []
+    var radial_count: int = 16
+    for i in range(radial_count):
+        var angle: float = TAU * float(i) / float(radial_count)
+        var basis := Basis(Vector3.UP, -angle)
+        basis = basis.scaled(Vector3(0.045, 1.0, 20.5))
+        var origin := Vector3(cos(angle) * 10.0, 0.055, sin(angle) * 10.0)
+        transforms.append(Transform3D(basis, origin))
+
+    var ring_radii: Array[float] = [5.0, 11.5, 18.0, 22.7]
+    var ring_segments: int = 24
+    for radius in ring_radii:
+        var segment_length: float = TAU * radius / float(ring_segments) * 0.90
+        for i in range(ring_segments):
+            var angle: float = TAU * float(i) / float(ring_segments)
+            var tangent_rotation: float = -angle
+            var basis := Basis(Vector3.UP, tangent_rotation)
+            basis = basis.scaled(Vector3(segment_length * 0.5, 1.0, 0.055))
+            var origin := Vector3(cos(angle) * radius, 0.06, sin(angle) * radius)
+            transforms.append(Transform3D(basis, origin))
+
+    multi.instance_count = transforms.size()
+    for i in range(transforms.size()):
+        multi.set_instance_transform(i, transforms[i])
+
+    instance.multimesh = multi
+    var mat := StandardMaterial3D.new()
+    mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mat.albedo_color = Color(0.06, 0.34, 0.72)
+    mat.emission_enabled = true
+    mat.emission = Color(0.08, 0.54, 1.0)
+    mat.emission_energy_multiplier = 1.45
+    instance.material_override = mat
+    parent.add_child(instance)
 
 func _build_city_backdrop(parent: Node3D) -> void:
     for i in range(16):

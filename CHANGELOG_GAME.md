@@ -169,3 +169,24 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Materials are duplicated and configured once when the fighter model is built; there is no per-frame material allocation.
 - The pass uses built-in mobile-compatible BaseMaterial3D features rather than an expensive custom multi-pass outline.
+
+## Update 11 — Arena lighting and batched environment detail
+
+### Added
+- Added a batched sci-fi floor-linework layer built with one MultiMesh instead of dozens of separate draw calls.
+- Added radial combat-zone guides and segmented concentric rings to give the arena stronger depth and scale.
+- Added restrained compatibility-renderer bloom and distance fog for a more cinematic anime presentation.
+
+### Changed
+- Increased ambient fill slightly so fighter faces and silhouettes stay readable.
+- MEDIUM/HIGH now use environment glow and atmospheric fog; LOW disables both automatically.
+- HIGH receives slightly stronger bloom/fog while MEDIUM keeps a conservative mobile target.
+
+### Graphics
+- Arena emissive geometry now has more visible structure under fighters without cluttering the central combat area.
+- Distant cyber-city geometry fades more naturally into the background.
+
+### Optimization
+- Floor decoration is rendered through a single MultiMesh batch.
+- LOW preset disables glow and fog completely.
+- No additional realtime shadow-casting lights were introduced.
