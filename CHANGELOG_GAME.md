@@ -802,3 +802,31 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Testing
 - CI now validates the real adult `Idle`, `Jog_Fwd` and `Hit_Chest` clips for every fighter variant.
+
+
+## Update 42 — Adult Ranger outfits and full-height preview framing
+
+### Added
+- Added CC0 Quaternius Female Ranger and Male Ranger full-height outfits on the validated 65-joint adult rig.
+- Assassin now uses the Female Ranger silhouette with hood, boots, belts, bracers and shoulder gear.
+- Heavy Fighter now uses the Male Ranger silhouette with heavier layered equipment.
+- Energy/Mage variants retain the cleaner textured Superhero Male/Female bodies for contrast.
+
+### Changed
+- Character Select preview is larger and reframed around the full 1.83 m body: 37° FOV, closer camera, taller viewport.
+- Adult weapons remain bone-attached but read at a larger 1.28 scale.
+- Adult material response is less plastic: weaker rim, lower specular contribution and rougher clothing/body response.
+- Ranger/Superhero textures receive only a subtle fighter-color multiply so normal/roughness/albedo detail remains visible.
+
+### Graphics
+- Four-fighter presentation now uses two clearly different adult silhouette families rather than four short/chibi KayKit bases.
+- Adult preview shows shoes-to-head framing rather than a miniature figure floating low inside the viewport.
+
+### Optimization
+- Ranger textures are shared between male/female variants.
+- No extra realtime lights or outline pass were added.
+- Existing UAL AnimationLibrary remains shared/cached across all adult bodies.
+
+### Testing
+- CI now verifies the exact Ranger source for Assassin/Heavy and Superhero source for the remaining variants.
+- Noisy temporary UAL diagnostic print was removed after 55/55 animation-track matching was confirmed.

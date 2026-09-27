@@ -49,3 +49,14 @@ These are fetched from the pack's `Assets/gltf` directory during CI and attached
 - **Why this source:** the pinned mirror documents that the body and UAL1 animation file share a bit-identical 65-joint Unreal/Godot humanoid rig. This allows adult 1.81 m proportions without runtime retarget ambiguity.
 - **Used for:** primary full-height player/enemy visual rigs and locomotion/combat animation library.
 - **Fallback:** KayKit characters remain available only if the adult Quaternius assets fail to load.
+
+
+## Quaternius Modular Character Outfits — Fantasy (Ranger subset)
+
+- **Author:** Quaternius
+- **Pack:** Modular Character Outfits - Fantasy (Standard)
+- **Pinned source used by CI:** `ryan321/gigacouch@cc8aa8fdbe5207ab1bfdacff81206eb9547494d5`
+- **Files used:** `Female_Ranger.gltf/.bin`, `Male_Ranger.gltf/.bin`, shared Ranger textures and Regular Male/Female skin textures.
+- **License:** CC0 1.0 Universal; the pinned source includes `License_Standard.txt`.
+- **Rig compatibility:** each Ranger glTF uses one 65-joint `Armature` skin compatible with the Universal Base Characters / UAL humanoid rig.
+- **Used for:** Assassin and Heavy Fighter adult clothing silhouettes.

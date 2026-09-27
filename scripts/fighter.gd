@@ -16,9 +16,9 @@ const Roster = preload("res://scripts/character_data.gd")
 
 const ADULT_ANIMATION_PATH := "res://assets/quaternius/universal_animation_library_1.glb"
 const ADULT_BODY_PATHS: Array[String] = [
+    "res://assets/quaternius/Female_Ranger.gltf",
     "res://assets/quaternius/Superhero_Female_FullBody.gltf",
-    "res://assets/quaternius/Superhero_Female_FullBody.gltf",
-    "res://assets/quaternius/Superhero_Male_FullBody.gltf",
+    "res://assets/quaternius/Male_Ranger.gltf",
     "res://assets/quaternius/Superhero_Male_FullBody.gltf"
 ]
 static var adult_animation_library_cache: AnimationLibrary = null
@@ -86,6 +86,7 @@ var visual_quality: int = 1
 var adult_rig: bool = false
 var adult_animation_verified: bool = false
 var adult_failure_reason: String = ""
+var adult_body_source: String = ""
 var adult_track_checked: int = 0
 var adult_track_matched: int = 0
 var ground_shadow: MeshInstance3D = null
@@ -175,6 +176,7 @@ func _try_build_adult_quaternius_model() -> bool:
         return false
 
     visual.name = "AdultCharacter"
+    adult_body_source = path.get_file()
     visual.rotation.y = PI
     visual.scale = Vector3.ONE
     visual.position = Vector3.ZERO
@@ -411,20 +413,22 @@ func _stylize_external_materials(node: Node) -> void:
                     stylized.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
                     stylized.specular_mode = BaseMaterial3D.SPECULAR_TOON
                     stylized.rim_enabled = true
-                    stylized.rim = 0.54
-                    stylized.rim_tint = 0.28
+                    stylized.rim = 0.30 if adult_rig else 0.54
+                    stylized.rim_tint = 0.16 if adult_rig else 0.28
                     var material_name: String = String(stylized.resource_name).to_lower()
                     if "hair" in material_name:
-                        stylized.roughness = clampf(stylized.roughness, 0.42, 0.62)
-                        stylized.rim = 0.72
-                        stylized.metallic_specular = 0.38
+                        stylized.roughness = clampf(stylized.roughness, 0.46, 0.68) if adult_rig else clampf(stylized.roughness, 0.42, 0.62)
+                        stylized.rim = 0.48 if adult_rig else 0.72
+                        stylized.metallic_specular = 0.28 if adult_rig else 0.38
                     elif "eye" in material_name:
-                        stylized.roughness = clampf(stylized.roughness, 0.18, 0.34)
-                        stylized.rim = 0.38
-                        stylized.metallic_specular = 0.62
+                        stylized.roughness = clampf(stylized.roughness, 0.20, 0.36)
+                        stylized.rim = 0.24 if adult_rig else 0.38
+                        stylized.metallic_specular = 0.46 if adult_rig else 0.62
                     else:
-                        stylized.roughness = clampf(stylized.roughness, 0.48, 0.78)
-                        stylized.metallic_specular = 0.36
+                        stylized.roughness = clampf(stylized.roughness, 0.58, 0.88) if adult_rig else clampf(stylized.roughness, 0.48, 0.78)
+                        stylized.metallic_specular = 0.24 if adult_rig else 0.36
+                        if adult_rig and ("ranger" in material_name or "superhero" in material_name):
+                            stylized.albedo_color = fighter_color.lerp(Color.WHITE, 0.72)
                     mesh_instance.set_surface_override_material(surface_index, stylized)
     for child in node.get_children():
         _stylize_external_materials(child)

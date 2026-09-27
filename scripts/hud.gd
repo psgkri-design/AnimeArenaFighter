@@ -462,8 +462,8 @@ func _build_character_preview() -> void:
     menu_ui.add_child(preview_label)
 
     preview_container = SubViewportContainer.new()
-    preview_container.position = Vector2(810, 238)
-    preview_container.size = Vector2(300, 285)
+    preview_container.position = Vector2(792, 220)
+    preview_container.size = Vector2(336, 320)
     preview_container.stretch = true
     preview_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
     var preview_style := StyleBoxFlat.new()
@@ -481,7 +481,7 @@ func _build_character_preview() -> void:
     menu_ui.add_child(preview_container)
 
     preview_viewport = SubViewport.new()
-    preview_viewport.size = Vector2i(600, 570)
+    preview_viewport.size = Vector2i(672, 640)
     preview_viewport.transparent_bg = true
     preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
     preview_container.add_child(preview_viewport)
@@ -506,7 +506,7 @@ func _build_character_preview() -> void:
 
     preview_platform_root = Node3D.new()
     preview_platform_root.name = "PreviewPlatform"
-    preview_platform_root.position = Vector3(0.0,-0.88,0.0)
+    preview_platform_root.position = Vector3(0.0,-0.90,0.0)
     preview_root.add_child(preview_platform_root)
 
     preview_platform_material = StandardMaterial3D.new()
@@ -538,11 +538,11 @@ func _build_character_preview() -> void:
         preview_platform_root.add_child(marker)
 
     preview_camera = Camera3D.new()
-    preview_camera.position = Vector3(0.0, 1.35, 4.4)
-    preview_camera.fov = 42.0
+    preview_camera.position = Vector3(0.0, 0.12, 3.15)
+    preview_camera.fov = 37.0
     preview_camera.current = true
     preview_root.add_child(preview_camera)
-    preview_camera.look_at(Vector3(0.0, 1.25, 0.0), Vector3.UP)
+    preview_camera.look_at(Vector3(0.0, 0.02, 0.0), Vector3.UP)
 
 func _refresh_preview() -> void:
     if preview_root == null:
@@ -556,7 +556,7 @@ func _refresh_preview() -> void:
     preview_fighter.gravity = 0.0
     preview_fighter.collision_layer = 0
     preview_fighter.collision_mask = 0
-    preview_fighter.position = Vector3(0.0, -0.92, 0.0)
+    preview_fighter.position = Vector3(0.0, -0.90, 0.0)
     preview_fighter.rotation.y = PI
     preview_fighter.set_physics_process(false)
     var preview_data: Dictionary = Roster.get_data(preview_variant)

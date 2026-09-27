@@ -49,6 +49,16 @@ jobs:
           curl -fL "https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/QUATERNIUS-LICENSE.txt" \
             -o assets/quaternius/QUATERNIUS_LICENSE.txt
 
+          # Full-height fantasy Ranger outfits on the same 65-joint Quaternius rig.
+          RANGER_BASE="https://raw.githubusercontent.com/ryan321/gigacouch/cc8aa8fdbe5207ab1bfdacff81206eb9547494d5/sdk/examples/gauntlet/assets/characters"
+          for FILE in Female_Ranger.gltf Female_Ranger.bin Male_Ranger.gltf Male_Ranger.bin \
+                      T_Ranger_BaseColor.png T_Ranger_Normal.png T_Ranger_ORM.png \
+                      T_Regular_Female_Dark_BaseColor.png T_Regular_Female_Normal.png T_Regular_Female_Roughness.png \
+                      T_Regular_Male_Dark_BaseColor.png T_Regular_Male_Normal.png T_Regular_Male_Roughness.png; do
+            curl -fL "$RANGER_BASE/$FILE" -o "assets/quaternius/$FILE"
+          done
+          curl -fL "$RANGER_BASE/License_Standard.txt" -o assets/quaternius/RANGER_LICENSE.txt
+
       - name: Generate original procedural SFX
         run: python3 tools/generate_sfx.py
 

@@ -91,6 +91,8 @@ func _run() -> void:
 
 
     _check(is_instance_valid(game.hud.preview_fighter), "3D character preview created")
+    _check(absf(game.hud.preview_camera.fov - 37.0) < 0.5, "adult full-height preview camera uses 37 FOV")
+    _check(game.hud.preview_container.size.y >= 320.0, "adult full-height preview viewport enlarged")
     _check(game.hud.preview_platform_root != null, "preview platform created")
     _check(game.hud.skill_buttons.size() == 4, "four mobile skill buttons created")
     _check(game.hud.ultimate_button != null, "ultimate mobile button created")
@@ -126,8 +128,14 @@ func _run() -> void:
         _check(game.hud.round_active, "round timer active after FIGHT gate")
         _check(not game.hud.menu_ui.visible and game.hud.game_ui.visible, "battle HUD active")
         _check(game.player.variant == variant, "selected player data propagated")
-        print("ADULT_DIAGNOSTIC variant=",variant," active=",game.player.adult_rig," verified=",game.player.adult_animation_verified," reason=",game.player.adult_failure_reason," matched=",game.player.adult_track_matched,"/",game.player.adult_track_checked)
+
         _check(game.player.adult_rig, "adult-proportion Quaternius rig active for variant %d" % variant)
+        if variant == 0:
+            _check(game.player.adult_body_source == "Female_Ranger.gltf", "Assassin Ranger outfit source active")
+        elif variant == 2:
+            _check(game.player.adult_body_source == "Male_Ranger.gltf", "Heavy Fighter Ranger outfit source active")
+        else:
+            _check("Superhero_" in game.player.adult_body_source, "clean adult Superhero body source active")
         _check(game.player.adult_animation_verified, "adult animation library drives skeleton for variant %d" % variant)
         _check(game.player.animation_player != null and game.player.animation_player.has_animation("Idle"), "adult Idle available")
         _check(game.player.animation_player.has_animation("Jog_Fwd"), "adult Jog_Fwd available")
