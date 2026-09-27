@@ -602,3 +602,18 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - LOW/MEDIUM/HIGH projectile-light scaling remains unchanged.
+
+
+## Update 33 — v0.3.2 stable release packaging
+
+### Changed
+- Android `versionCode` is now 5.
+- Android `versionName` is now 0.3.2.
+- README now identifies the current stable build as Combat Reactions / KO / Android Performance.
+- Legacy `UPDATE_LOG.txt` has been synchronized with the v0.3.2 milestone.
+
+### Added
+- Release summary now includes heavy-hit knockdown/get-up, cinematic KO/victory flow, expanded mobile control states and shared-material/projectile-light optimization.
+
+### Fixed
+- Release metadata now matches the latest validated combat-reaction/performance revision.

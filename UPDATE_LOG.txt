@@ -125,6 +125,19 @@ VERSION 0.3.1 — 2026-09-27 — COMBAT IDENTITY / AUDIO / UI POLISH
 - Updated Android release metadata to versionCode 4 / versionName 0.3.1.
 
 ==================================================
+VERSION 0.3.2 — 2026-09-27 — COMBAT REACTIONS / KO / ANDROID PERFORMANCE
+==================================================
+- Added heavy-hit airborne -> knockdown -> get-up reactions using imported Lie_Down / Lie_StandUp clips.
+- Added brief wake-up invulnerability and landing dust for strong launch attacks.
+- Added cinematic KO camera framing, winner Cheer animation and animated result reveal.
+- Added live Heavy/Dodge/Dash/Block/Lock state feedback directly to mobile controls.
+- Reused shared static arena materials to reduce material count and SetPass churn.
+- Added LOW/MEDIUM/HIGH projectile-light scaling: LOW removes realtime projectile lights, MEDIUM trims them, HIGH keeps full glow.
+- Fixed projectile quality lookup for embedded/headless scenes.
+- Retained full Character Select -> Start Battle -> damage -> knockdown -> KO -> rematch -> menu smoke validation.
+- Updated Android release metadata to versionCode 5 / versionName 0.3.2.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.
