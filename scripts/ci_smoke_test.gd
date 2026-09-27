@@ -120,6 +120,22 @@ func _run() -> void:
             await physics_frame
         _check(game.enemy.health < hp_before, "light attack deals damage")
 
+        game.enemy.health = game.enemy.max_health
+        game.enemy.receive_hit(game.player, {
+            "damage": 155.0,
+            "hitstun": 0.5,
+            "knockback": 16.0,
+            "launch": 4.5,
+            "block_damage": 40.0,
+            "anim_kind": "heavy"
+        })
+        await physics_frame
+        _check(game.enemy.knockdown_timer > 0.0, "heavy reaction enters knockdown")
+        _check(game.enemy.state == game.enemy.State.STUNNED, "knockdown locks normal control")
+        for _knockdown_frame in range(95):
+            await physics_frame
+        _check(game.enemy.knockdown_timer <= 0.0, "knockdown recovers into get-up flow")
+
         game.enemy.receive_hit(game.player, {
             "damage": 99999.0,
             "hitstun": 0.1,

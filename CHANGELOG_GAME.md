@@ -498,3 +498,29 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed
 - Release metadata now matches the latest validated gameplay/visual revision instead of v0.3.0.
+
+
+## Update 28 — Heavy hit knockdown and get-up reactions
+
+### Added
+- Added a dedicated heavy-hit knockdown state driven by imported `Lie_Down` / `Lie_StandUp` animation clips.
+- Strong attacks, large launch values and Ultimate hits can now transition through airborne impact → ground knockdown → get-up.
+- Added a short invulnerability window during the get-up phase to prevent unavoidable wake-up loops.
+- Added a small pooled ground-dust cue when an airborne fighter lands into knockdown.
+
+### Changed
+- Light/medium hits keep fast alternating `Hit_A` / `Hit_B` reactions for responsiveness.
+- Heavy reactions cancel the victim's current attack and temporarily lock normal movement/AI.
+- Knockdown horizontal velocity decays smoothly instead of stopping instantly.
+
+### Animation
+- Heavy impact reactions now have a visible recovery arc instead of snapping directly from hit-stun back to idle.
+- Death overrides and clears any active knockdown state.
+
+### Gameplay
+- Ultimate/heavy attacks gain more visual and mechanical weight without extending every normal hit.
+- Wake-up protection is brief and only active during the stand-up transition.
+
+### Optimization
+- Knockdown uses existing imported clips and fighter state variables; no additional scene nodes are created.
+- CI smoke validation now explicitly checks knockdown entry and recovery.

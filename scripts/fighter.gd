@@ -68,6 +68,9 @@ var hit_reaction_toggle: bool = false
 var visual_phase: float = 0.0
 var attack_trail_timer: float = 0.0
 var aura_pulse_timer: float = 0.0
+var knockdown_timer: float = 0.0
+var knockdown_stage: int = 0
+var knockdown_landed: bool = false
 
 func configure(p_variant: int, p_is_ai: bool, p_ai_level: int = 1) -> void:
     variant = clampi(p_variant, 0, Roster.count() - 1)
@@ -507,7 +510,7 @@ func set_target(p_target) -> void:
 
 func _physics_process(delta: float) -> void:
     _tick(delta)
-    if not controls_enabled and state != State.DEAD:
+    if not controls_enabled and state != State.DEAD and knockdown_timer <= 0.0:
         state = State.IDLE
         velocity.x = move_toward(velocity.x, 0.0, 28.0 * delta)
         velocity.z = move_toward(velocity.z, 0.0, 28.0 * delta)
@@ -521,6 +524,35 @@ func _physics_process(delta: float) -> void:
         move_and_slide()
         _update_visuals(delta)
         return
+    if knockdown_timer > 0.0 and state != State.DEAD:
+        state = State.STUNNED
+        knockdown_timer = maxf(0.0, knockdown_timer - delta)
+        velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        _clamp_arena()
+
+        if not knockdown_landed and is_on_floor():
+            knockdown_landed = true
+            knockdown_stage = 1
+            knockdown_timer = maxf(knockdown_timer, 0.88)
+            _play_animation(&"Lie_Down", 0.04, 1.08, true)
+            combat_fx.emit("dust", Vector3(global_position.x,0.07,global_position.z), Vector3.UP, fighter_color, 0.62)
+        elif knockdown_landed and knockdown_stage == 1 and knockdown_timer <= 0.38:
+            knockdown_stage = 2
+            iframe_timer = maxf(iframe_timer, 0.26)
+            _play_animation(&"Lie_StandUp", 0.06, 1.12, true)
+
+        if knockdown_timer <= 0.0:
+            knockdown_stage = 0
+            knockdown_landed = false
+            iframe_timer = maxf(iframe_timer, 0.12)
+            state = State.IDLE
+
+        _update_visuals(delta)
+        return
+
     if stun_timer > 0.0:
         state = State.STUNNED
         velocity.x = move_toward(velocity.x,0.0,18.0*delta)
@@ -719,9 +751,26 @@ func receive_hit(attacker,data:Dictionary)->void:
     if is_instance_valid(attacker):direction=global_position-attacker.global_position
     direction.y=0
     if direction.length_squared()<0.01:direction=Vector3.BACK
-    velocity=direction.normalized()*float(data.get("knockback",3.0)); velocity.y=float(data.get("launch",0.0))
-    hit_reaction_toggle = not hit_reaction_toggle
-    _play_animation(&"Hit_B" if hit_reaction_toggle else &"Hit_A", 0.03, 1.0, true)
+    var knockback_strength: float = float(data.get("knockback",3.0))
+    var launch_strength: float = float(data.get("launch",0.0))
+    velocity=direction.normalized()*knockback_strength
+    velocity.y=launch_strength
+
+    var heavy_reaction: bool = damage >= 100.0 or knockback_strength >= 14.0 or launch_strength >= 4.0 or String(data.get("anim_kind","")) == "ultimate"
+    if heavy_reaction and health > 0.0:
+        knockdown_timer = 1.12
+        knockdown_stage = 0
+        knockdown_landed = is_on_floor() and launch_strength <= 1.0
+        stun_timer = 0.0
+        current_attack = {}
+        if knockdown_landed:
+            knockdown_stage = 1
+            _play_animation(&"Lie_Down", 0.04, 1.08, true)
+        else:
+            _play_animation(&"Hit_B", 0.03, 0.92, true)
+    else:
+        hit_reaction_toggle = not hit_reaction_toggle
+        _play_animation(&"Hit_B" if hit_reaction_toggle else &"Hit_A", 0.03, 1.0, true)
     stats_changed.emit(self); _check_ko()
 
 func register_external_hit(_other,damage,pos,strength)->void:
@@ -878,6 +927,9 @@ func _check_ko()->void:
     health=0.0
     state=State.DEAD
     current_attack={}
+    knockdown_timer=0.0
+    knockdown_stage=0
+    knockdown_landed=false
     _play_animation(&"Death_A", 0.04, 1.0, true)
     knocked_out.emit(self)
 
