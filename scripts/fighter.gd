@@ -64,6 +64,15 @@ var skeleton: Skeleton3D = null
 var head_bone: int = -1
 var chest_bone: int = -1
 var hand_bone: int = -1
+var left_foot_bone: int = -1
+var right_foot_bone: int = -1
+var left_foot_ik: SkeletonIK3D = null
+var right_foot_ik: SkeletonIK3D = null
+var left_foot_target: Node3D = null
+var right_foot_target: Node3D = null
+var foot_ik_timer: float = 0.0
+var left_foot_clearance: float = -1.0
+var right_foot_clearance: float = -1.0
 var weapon_attachment_count: int = 0
 var last_animation: StringName = &""
 var hit_reaction_toggle: bool = false
@@ -151,7 +160,10 @@ func _try_build_external_model() -> bool:
         head_bone = skeleton.find_bone("head")
         chest_bone = skeleton.find_bone("chest")
         hand_bone = skeleton.find_bone("handslot.r")
+        left_foot_bone = skeleton.find_bone("foot.l")
+        right_foot_bone = skeleton.find_bone("foot.r")
         _attach_external_weapons()
+        _setup_foot_ik()
     _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
 
@@ -223,6 +235,95 @@ func _stylize_external_materials(node: Node) -> void:
                     mesh_instance.set_surface_override_material(surface_index, stylized)
     for child in node.get_children():
         _stylize_external_materials(child)
+
+func _setup_foot_ik() -> void:
+    if skeleton == null or left_foot_bone < 0 or right_foot_bone < 0:
+        return
+
+    left_foot_target = Node3D.new()
+    left_foot_target.name = "FootIKTargetLeft"
+    add_child(left_foot_target)
+
+    right_foot_target = Node3D.new()
+    right_foot_target.name = "FootIKTargetRight"
+    add_child(right_foot_target)
+
+    var left_pose: Transform3D = skeleton.get_bone_global_pose(left_foot_bone)
+    var right_pose: Transform3D = skeleton.get_bone_global_pose(right_foot_bone)
+    left_foot_target.global_position = (skeleton.global_transform * left_pose).origin
+    right_foot_target.global_position = (skeleton.global_transform * right_pose).origin
+
+    left_foot_ik = SkeletonIK3D.new()
+    left_foot_ik.name = "FootIKLeft"
+    left_foot_ik.root_bone = &"upperleg.l"
+    left_foot_ik.tip_bone = &"foot.l"
+    left_foot_ik.override_tip_basis = false
+    left_foot_ik.max_iterations = 4
+    left_foot_ik.min_distance = 0.015
+    left_foot_ik.influence = 0.0
+    skeleton.add_child(left_foot_ik)
+    left_foot_ik.target_node = left_foot_ik.get_path_to(left_foot_target)
+    left_foot_ik.start()
+
+    right_foot_ik = SkeletonIK3D.new()
+    right_foot_ik.name = "FootIKRight"
+    right_foot_ik.root_bone = &"upperleg.r"
+    right_foot_ik.tip_bone = &"foot.r"
+    right_foot_ik.override_tip_basis = false
+    right_foot_ik.max_iterations = 4
+    right_foot_ik.min_distance = 0.015
+    right_foot_ik.influence = 0.0
+    skeleton.add_child(right_foot_ik)
+    right_foot_ik.target_node = right_foot_ik.get_path_to(right_foot_target)
+    right_foot_ik.start()
+
+func _update_foot_ik(delta: float) -> void:
+    if skeleton == null or left_foot_ik == null or right_foot_ik == null:
+        return
+
+    var grounded_state: bool = state in [State.IDLE, State.MOVE, State.BLOCK]
+    var enabled: bool = is_on_floor() and grounded_state and knockdown_timer <= 0.0 and not victory_pose
+    var planar_speed: float = Vector2(velocity.x,velocity.z).length()
+    var desired_influence: float = 0.0
+    if enabled:
+        desired_influence = 0.34 if planar_speed < 1.0 else 0.20
+
+    left_foot_ik.influence = move_toward(left_foot_ik.influence, desired_influence, delta * 3.8)
+    right_foot_ik.influence = move_toward(right_foot_ik.influence, desired_influence, delta * 3.8)
+
+    if not enabled:
+        return
+
+    foot_ik_timer -= delta
+    if foot_ik_timer > 0.0:
+        return
+    foot_ik_timer = 0.05
+
+    left_foot_clearance = _sample_foot_target(left_foot_bone, left_foot_target, left_foot_clearance)
+    right_foot_clearance = _sample_foot_target(right_foot_bone, right_foot_target, right_foot_clearance)
+
+func _sample_foot_target(bone_index: int, target_node: Node3D, clearance: float) -> float:
+    if bone_index < 0 or target_node == null:
+        return clearance
+
+    var bone_pose: Transform3D = skeleton.get_bone_global_pose(bone_index)
+    var foot_world: Vector3 = (skeleton.global_transform * bone_pose).origin
+    var query := PhysicsRayQueryParameters3D.create(
+        foot_world + Vector3.UP * 0.32,
+        foot_world + Vector3.DOWN * 0.58,
+        1
+    )
+    query.exclude = [get_rid()]
+    var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+    if result.is_empty():
+        return clearance
+
+    var hit_position: Vector3 = result["position"]
+    if clearance < 0.0:
+        clearance = clampf(foot_world.y - hit_position.y, 0.025, 0.22)
+
+    target_node.global_position = Vector3(foot_world.x, hit_position.y + clearance, foot_world.z)
+    return clearance
 
 func _find_skeleton(node: Node) -> Skeleton3D:
     if node is Skeleton3D:
@@ -375,6 +476,7 @@ func _update_visuals(delta: float) -> void:
     _animate_model(delta)
     _sync_animation()
     _apply_combat_look_at()
+    _update_foot_ik(delta)
 
 func _decorate_external_model() -> void:
     match variant:

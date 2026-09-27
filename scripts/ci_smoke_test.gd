@@ -112,6 +112,9 @@ func _run() -> void:
             _check(game.player.head_bone >= 0, "head bone resolved for combat look-at")
             _check(game.player.chest_bone >= 0, "chest bone resolved for combat look-at")
             _check(game.player.hand_bone >= 0, "right hand slot resolved for combat VFX")
+            _check(game.player.left_foot_bone >= 0 and game.player.right_foot_bone >= 0, "left/right foot bones resolved")
+            _check(game.player.left_foot_ik != null and game.player.right_foot_ik != null, "foot IK chains created")
+            _check(game.player.left_foot_target != null and game.player.right_foot_target != null, "foot IK targets created")
 
         game.player.is_ai = false
         game.enemy.is_ai = false

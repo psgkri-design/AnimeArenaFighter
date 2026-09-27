@@ -642,3 +642,25 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Round intros no longer consume match time before player/AI control is enabled.
 - Projectile quality scaling no longer compounds light energy/range when presets change repeatedly.
 - CI validates the 20-projectile pool, quality profile, activation/recycling and FIGHT timer gate.
+
+
+## Update 35 — Mobile foot grounding and slope-aware leg IK
+
+### Added
+- Added two lightweight SkeletonIK3D leg chains using the validated KayKit upperleg/foot bones.
+- Added left/right ground targets driven by short downward physics raycasts.
+- Added automatic foot-clearance calibration so the solver preserves the imported rig's ankle/foot height.
+- Added smooth IK influence blending for idle, locomotion and block states.
+
+### Changed
+- Foot IK influence is reduced while moving and fully fades out during attacks, dash/dodge, airborne states, knockdown, death and victory presentation.
+- Root motion remains disabled; IK only adjusts the leg chains after authored animation playback.
+
+### Animation
+- Idle and locomotion feet can conform to small floor/slope variation instead of visually floating through uneven surfaces.
+- Existing combat look-at and authored attack clips remain dominant because leg IK uses limited influence.
+
+### Optimization
+- Ground sampling runs at 20 Hz rather than every rendered frame.
+- Maximum four FABRIK iterations per leg and only two short collision-layer-1 raycasts are used per sample.
+- CI validates both foot bones, IK chains and target nodes on the imported rig.
