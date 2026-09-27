@@ -66,6 +66,8 @@ var weapon_attachment_count: int = 0
 var last_animation: StringName = &""
 var hit_reaction_toggle: bool = false
 var visual_phase: float = 0.0
+var attack_trail_timer: float = 0.0
+var aura_pulse_timer: float = 0.0
 
 func configure(p_variant: int, p_is_ai: bool, p_ai_level: int = 1) -> void:
     variant = clampi(p_variant, 0, Roster.count() - 1)
@@ -568,7 +570,12 @@ func _tick(delta: float) -> void:
     stun_timer=maxf(0.0,stun_timer-delta); block_parry_timer=maxf(0.0,block_parry_timer-delta)
     ai_timer=maxf(0.0,ai_timer-delta); ai_block_timer=maxf(0.0,ai_block_timer-delta)
     combo_window=maxf(0.0,combo_window-delta)
+    attack_trail_timer=maxf(0.0,attack_trail_timer-delta)
+    aura_pulse_timer=maxf(0.0,aura_pulse_timer-delta)
     for i in range(4): skill_cooldowns[i]=maxf(0.0,skill_cooldowns[i]-delta)
+    if ultimate >= 72.0 and aura_pulse_timer <= 0.0 and state != State.DEAD:
+        aura_pulse_timer = lerpf(0.42, 0.20, clampf((ultimate - 72.0) / 28.0, 0.0, 1.0))
+        combat_fx.emit("aura", global_position + Vector3.UP * 0.95, Vector3.UP, fighter_color, lerpf(0.28, 0.62, ultimate / 100.0))
     if state != State.BLOCK: stamina=minf(max_stamina,stamina+20.0*delta)
     if combo_window<=0.0 and current_attack.is_empty(): combo_step=0
 
@@ -658,7 +665,13 @@ func _process_attack(delta:float)->void:
     var startup:float=float(current_attack.get("startup",0.1))
     var active:float=float(current_attack.get("active",0.1))
     var recovery:float=float(current_attack.get("recovery",0.2))
-    if attack_timer>=startup and attack_timer<=startup+active and not attack_hit_done:_attempt_hit()
+    if attack_timer>=startup and attack_timer<=startup+active:
+        if attack_trail_timer <= 0.0:
+            attack_trail_timer = 0.045
+            var attack_strength: float = 1.45 if String(current_attack.get("anim_kind","")) in ["heavy","ultimate"] else 0.88
+            combat_fx.emit("slash", _combat_fx_origin(), -global_transform.basis.z, fighter_color, attack_strength)
+        if not attack_hit_done:
+            _attempt_hit()
     if attack_timer>=startup+active+recovery: current_attack={}; attack_timer=0.0; state=State.IDLE
 
 func _attempt_hit()->void:

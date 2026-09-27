@@ -8,6 +8,9 @@ var life := 3.5
 var knockback := 8.0
 var color := Color(0.15, 0.75, 1.0)
 var velocity := Vector3.ZERO
+var visual_root: Node3D
+var orbit_a: MeshInstance3D
+var orbit_b: MeshInstance3D
 
 func configure(p_source, p_target, p_color: Color, p_damage := 85.0) -> void:
     source = p_source
@@ -21,6 +24,9 @@ func _ready() -> void:
     monitoring = true
     monitorable = true
 
+    visual_root = Node3D.new()
+    add_child(visual_root)
+
     var mesh_instance := MeshInstance3D.new()
     var sphere := SphereMesh.new()
     sphere.radius = 0.32
@@ -30,7 +36,29 @@ func _ready() -> void:
     material.shader = load("res://shaders/energy.gdshader")
     material.set_shader_parameter("energy_color", color)
     mesh_instance.material_override = material
-    add_child(mesh_instance)
+    visual_root.add_child(mesh_instance)
+
+    orbit_a = MeshInstance3D.new()
+    var ring_mesh_a := CylinderMesh.new()
+    ring_mesh_a.top_radius = 0.52
+    ring_mesh_a.bottom_radius = 0.52
+    ring_mesh_a.height = 0.035
+    ring_mesh_a.radial_segments = 16
+    orbit_a.mesh = ring_mesh_a
+    orbit_a.material_override = material
+    orbit_a.rotation_degrees = Vector3(90,0,0)
+    visual_root.add_child(orbit_a)
+
+    orbit_b = MeshInstance3D.new()
+    var ring_mesh_b := CylinderMesh.new()
+    ring_mesh_b.top_radius = 0.44
+    ring_mesh_b.bottom_radius = 0.44
+    ring_mesh_b.height = 0.025
+    ring_mesh_b.radial_segments = 12
+    orbit_b.mesh = ring_mesh_b
+    orbit_b.material_override = material
+    orbit_b.rotation_degrees = Vector3(0,0,90)
+    visual_root.add_child(orbit_b)
 
     var glow := OmniLight3D.new()
     glow.light_color = color
@@ -64,6 +92,11 @@ func _physics_process(delta: float) -> void:
 
     global_position += velocity * delta
     rotate_y(delta * 7.0)
+    if visual_root != null:
+        visual_root.rotation.x += delta * 7.5
+        visual_root.rotation.z += delta * 5.2
+        var pulse: float = 1.0 + sin(Time.get_ticks_msec() * 0.018) * 0.08
+        visual_root.scale = Vector3.ONE * pulse
 
 func _on_area_entered(area: Area3D) -> void:
     var other = area.get_meta("fighter", null)

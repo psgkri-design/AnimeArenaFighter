@@ -262,3 +262,23 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - Weapon assets share the KayKit texture atlases and are loaded once with the fighter scene; no runtime spawning occurs per attack.
+
+## Update 16 — Weapon trails, Ultimate aura and projectile polish
+
+### Added
+- Added continuous bone-anchored slash trail bursts during the active frames of melee attacks.
+- Added an Ultimate-charge aura that becomes more frequent as the meter approaches 100%.
+- Added layered rotating energy rings and pulse animation to projectiles.
+
+### Changed
+- Heavy and Ultimate attacks use stronger hand-driven trail intensity than light attacks.
+- Ultimate aura uses the fighter's own color identity and only runs while the fighter is alive.
+
+### Graphics
+- Melee attacks now visually trace the animated hand/weapon arc rather than showing only a single startup slash.
+- Energy projectiles have a more readable silhouette and motion at combat distance.
+
+### Optimization
+- Weapon trails reuse the existing 24-slot pooled combat VFX system.
+- Aura pulses are rate-limited and do not spawn every frame.
+- Projectile polish reuses one shared shader material inside each projectile instead of creating separate materials for every ring.
