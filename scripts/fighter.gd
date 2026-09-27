@@ -270,7 +270,7 @@ func _get_adult_animation_library() -> AnimationLibrary:
     if source_scene == null:
         return null
     var source_root := source_scene.instantiate()
-    var source_player := _find_animation_player(source_root)
+    var source_player := _find_animation_player_with_most_clips(source_root)
     if source_player == null:
         source_root.free()
         return null
@@ -589,6 +589,22 @@ func _apply_combat_look_at() -> void:
         var head_pose: Transform3D = skeleton.get_bone_global_pose(head_bone)
         head_pose.basis = Basis(Vector3.UP, yaw * 0.42) * Basis(Vector3.RIGHT, -pitch * 0.30) * head_pose.basis
         skeleton.set_bone_global_pose_override(head_bone, head_pose, 0.34, false)
+
+func _find_animation_player_with_most_clips(node: Node) -> AnimationPlayer:
+    var best: AnimationPlayer = null
+    var best_count: int = -1
+    var pending: Array[Node] = [node]
+    while not pending.is_empty():
+        var current := pending.pop_back()
+        if current is AnimationPlayer:
+            var candidate := current as AnimationPlayer
+            var count: int = candidate.get_animation_list().size()
+            if count > best_count:
+                best = candidate
+                best_count = count
+        for child in current.get_children():
+            pending.append(child)
+    return best
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
     if node is AnimationPlayer:
