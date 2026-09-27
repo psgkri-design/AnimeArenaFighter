@@ -132,7 +132,6 @@ func _add_city_tower(parent: Node3D, pos: Vector3, height: float, width: float, 
     body_mesh.size = Vector3(width, height, width * 0.82)
     body.mesh = body_mesh
     body.position = pos + Vector3.UP * (height * 0.5 - 0.25)
-    body.look_at(Vector3(0, body.position.y, 0), Vector3.UP)
 
     var body_mat := StandardMaterial3D.new()
     body_mat.albedo_color = Color(0.018,0.025,0.052)
@@ -140,6 +139,7 @@ func _add_city_tower(parent: Node3D, pos: Vector3, height: float, width: float, 
     body_mat.roughness = 0.42
     body.material_override = body_mat
     parent.add_child(body)
+    body.look_at(Vector3(0, body.position.y, 0), Vector3.UP)
 
     for band_index in range(2):
         var band := MeshInstance3D.new()

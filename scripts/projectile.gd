@@ -59,7 +59,7 @@ func _physics_process(delta: float) -> void:
         return
 
     if is_instance_valid(target):
-        var desired := (target.global_position + Vector3.UP - global_position).normalized() * speed
+        var desired: Vector3 = (target.global_position + Vector3.UP - global_position).normalized() * speed
         velocity = velocity.lerp(desired, clampf(delta * 3.2, 0.0, 1.0))
 
     global_position += velocity * delta
