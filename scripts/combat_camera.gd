@@ -16,6 +16,11 @@ var cinematic_elapsed: float = 0.0
 var cinematic_side_sign: float = 1.0
 var cinematic_attacker = null
 var cinematic_target = null
+var ko_timer: float = 0.0
+var ko_duration: float = 0.0
+var ko_elapsed: float = 0.0
+var ko_winner = null
+var ko_loser = null
 var active_touch: int = -1
 var fov_impulse: float = 0.0
 
@@ -46,6 +51,15 @@ func play_ultimate(attacker, victim) -> void:
     cinematic_side_sign = -1.0 if int(attacker.variant) in [0, 3] else 1.0
     add_shake(1.4)
 
+func play_ko(winner, loser) -> void:
+    ko_winner = winner
+    ko_loser = loser
+    ko_duration = 1.15
+    ko_timer = ko_duration
+    ko_elapsed = 0.0
+    cinematic_timer = 0.0
+    add_shake(1.7)
+
 func _input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
         var view_size: Vector2 = get_viewport().get_visible_rect().size
@@ -64,6 +78,12 @@ func _input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
     if not is_instance_valid(player):
+        return
+
+    if ko_timer > 0.0 and is_instance_valid(ko_winner) and is_instance_valid(ko_loser):
+        ko_timer -= delta
+        ko_elapsed += delta
+        _update_ko(delta)
         return
 
     if cinematic_timer > 0.0 and is_instance_valid(cinematic_attacker) and is_instance_valid(cinematic_target):
@@ -138,6 +158,31 @@ func _update_cinematic(delta: float) -> void:
     if progress > 0.72:
         cinematic_fov = lerpf(cinematic_fov, 64.0, (progress - 0.72) / 0.28)
     camera.fov = lerpf(camera.fov, cinematic_fov, clampf(delta * 12.0, 0.0, 1.0))
+
+func _update_ko(delta: float) -> void:
+    var winner_pos: Vector3 = ko_winner.global_position + Vector3.UP * 1.25
+    var loser_pos: Vector3 = ko_loser.global_position + Vector3.UP * 0.82
+    var center: Vector3 = winner_pos.lerp(loser_pos, 0.40)
+    var direction: Vector3 = loser_pos - winner_pos
+    direction.y = 0.0
+    if direction.length_squared() < 0.01:
+        direction = Vector3.FORWARD
+    direction = direction.normalized()
+    var side: Vector3 = direction.cross(Vector3.UP).normalized()
+    var progress: float = clampf(ko_elapsed / maxf(ko_duration,0.001),0.0,1.0)
+    var side_sign: float = -1.0 if int(ko_winner.variant) in [0,3] else 1.0
+    var desired: Vector3 = winner_pos - direction * lerpf(3.0,2.4,progress) + side * (2.8 * side_sign) + Vector3.UP * lerpf(0.85,1.25,progress)
+    desired = _camera_collision(center, desired)
+    global_position = global_position.lerp(desired, clampf(delta * 12.0,0.0,1.0))
+    camera.look_at(center + Vector3.UP * 0.10, Vector3.UP)
+    camera.fov = lerpf(camera.fov, lerpf(49.0,54.0,progress), clampf(delta*10.0,0.0,1.0))
+
+    if shake_time > 0.0:
+        shake_time -= delta
+        camera.position = Vector3(randf_range(-1.0,1.0),randf_range(-1.0,1.0),0.0) * shake_strength * 0.045
+        shake_strength = move_toward(shake_strength,0.0,delta*8.0)
+    else:
+        camera.position = camera.position.lerp(Vector3.ZERO,clampf(delta*14.0,0.0,1.0))
 
 func _camera_collision(from: Vector3, desired: Vector3) -> Vector3:
     var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state

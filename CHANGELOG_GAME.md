@@ -524,3 +524,29 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Knockdown uses existing imported clips and fighter state variables; no additional scene nodes are created.
 - CI smoke validation now explicitly checks knockdown entry and recovery.
+
+
+## Update 29 — Cinematic KO and victory flow
+
+### Added
+- Added a dedicated short KO camera state with low-angle winner/loser framing.
+- Added imported `Cheer` victory animation for the surviving fighter.
+- Added delayed animated result reveal on device after the KO camera beat.
+- Added stronger KO haptic feedback on Android.
+
+### Changed
+- Both fighters are locked when the match ends so residual AI/input cannot move during the result beat.
+- KO now cancels any active Ultimate camera and transitions into its own framing.
+- Result text now eases from a slightly enlarged transparent state instead of appearing instantly.
+- Rematch clears victory presentation before spawning the next round.
+
+### Animation
+- Winner remains in a victory pose while the defeated fighter stays in its death state.
+- Normal movement animation sync no longer overrides the Cheer clip during the KO presentation.
+
+### Camera
+- KO camera uses collision-safe interpolation, fighter-dependent side selection and a restrained FOV transition.
+
+### Optimization
+- KO presentation reuses the existing camera and HUD nodes.
+- Headless CI skips the presentation delay while still validating the victory-pose state and result screen.

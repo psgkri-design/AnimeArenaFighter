@@ -437,6 +437,10 @@ func _connect_fighter(fighter) -> void:
     fighter.combat_fx.connect(_on_combat_fx)
 
 func _restart_match() -> void:
+    if is_instance_valid(player):
+        player.set_victory_pose(false)
+    if is_instance_valid(enemy):
+        enemy.set_victory_pose(false)
     _start_match(selected_player_variant, selected_enemy_variant, selected_difficulty)
 
 func _return_to_menu() -> void:
@@ -459,8 +463,22 @@ func _on_knocked_out(loser) -> void:
     if not match_running:
         return
     match_running = false
-    camera_rig.add_shake(2.0)
-    hud.show_result("K.O.\nVICTORY" if loser == enemy else "K.O.\nDEFEAT")
+    var winner = player if loser == enemy else enemy
+    if is_instance_valid(player):
+        player.controls_enabled = false
+    if is_instance_valid(enemy):
+        enemy.controls_enabled = false
+    if is_instance_valid(winner):
+        winner.set_victory_pose(true)
+    camera_rig.play_ko(winner, loser)
+    _mobile_haptic(2.0)
+
+    var result_text: String = "K.O.\nVICTORY" if loser == enemy else "K.O.\nDEFEAT"
+    if DisplayServer.get_name() == "headless":
+        hud.show_result(result_text)
+        return
+    await get_tree().create_timer(0.72,false).timeout
+    hud.show_result(result_text)
 
 func _on_time_expired() -> void:
     if not match_running or not is_instance_valid(player) or not is_instance_valid(enemy):

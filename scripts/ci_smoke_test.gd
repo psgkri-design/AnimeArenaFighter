@@ -146,6 +146,7 @@ func _run() -> void:
         await process_frame
         _check(not game.match_running, "KO ends match")
         _check(game.hud.result_ui.visible, "result screen shown")
+        _check(game.player.victory_pose, "winner enters victory pose")
 
         game.hud.restart_requested.emit()
         await process_frame

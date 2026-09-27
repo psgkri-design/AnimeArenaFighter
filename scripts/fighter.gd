@@ -21,6 +21,7 @@ var variant: int = 0
 var target = null
 var lock_on: bool = true
 var controls_enabled: bool = true
+var victory_pose: bool = false
 
 var max_health: float = 1000.0
 var health: float = 1000.0
@@ -348,6 +349,9 @@ func _play_animation(name: StringName, blend: float = 0.12, speed: float = 1.0, 
 func _sync_animation() -> void:
     if animation_player == null:
         return
+    if victory_pose:
+        _play_animation(&"Cheer", 0.12, 1.0)
+        return
     if state == State.ATTACK:
         return
     if state == State.DEAD:
@@ -507,6 +511,15 @@ func _build_bunny() -> void:
 
 func set_target(p_target) -> void:
     target = p_target
+
+func set_victory_pose(enabled: bool) -> void:
+    victory_pose = enabled
+    controls_enabled = not enabled
+    current_attack = {}
+    if enabled:
+        velocity = Vector3.ZERO
+        state = State.IDLE
+        _play_animation(&"Cheer", 0.10, 1.0, true)
 
 func _physics_process(delta: float) -> void:
     _tick(delta)

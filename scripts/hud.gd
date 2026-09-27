@@ -219,8 +219,15 @@ func hide_round_banner() -> void:
 
 func show_result(text_value: String) -> void:
     result_label.text = text_value
+    result_label.modulate = Color(1.0,1.0,1.0,0.0)
+    result_label.scale = Vector2(1.18,1.18)
+    result_label.pivot_offset = result_label.size * 0.5
     result_ui.visible = true
     controls_ui.visible = false
+    var tween := create_tween()
+    tween.set_parallel(true)
+    tween.tween_property(result_label,"modulate:a",1.0,0.16)
+    tween.tween_property(result_label,"scale",Vector2.ONE,0.24)
 
 func show_main_menu() -> void:
     player = null
