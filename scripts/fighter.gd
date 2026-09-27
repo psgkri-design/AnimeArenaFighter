@@ -22,6 +22,7 @@ var target = null
 var lock_on: bool = true
 var controls_enabled: bool = true
 var victory_pose: bool = false
+var projectile_pool = null
 
 var max_health: float = 1000.0
 var health: float = 1000.0
@@ -790,13 +791,19 @@ func register_external_hit(_other,damage,pos,strength)->void:
     energy=minf(max_energy,energy+float(damage)*0.10); ultimate=minf(100.0,ultimate+float(damage)*0.08); impact.emit(pos,strength,fighter_color)
 
 func _spawn_skill_projectile(p_damage: float, lateral_offset: float = 0.0) -> void:
+    var origin: Vector3 = _combat_fx_origin()
+    var side: Vector3 = global_transform.basis.x * lateral_offset
+    var spawn_position: Vector3 = origin + side - global_transform.basis.z * 0.28
+
+    if projectile_pool != null and projectile_pool.has_method("spawn_projectile"):
+        projectile_pool.spawn_projectile(self,target,fighter_color,p_damage,variant,spawn_position)
+        return
+
     var projectile = ProjectileScript.new()
     projectile.name = "SkillProjectile"
     projectile.configure(self,target,fighter_color,p_damage,variant)
     get_tree().current_scene.add_child(projectile)
-    var origin: Vector3 = _combat_fx_origin()
-    var side: Vector3 = global_transform.basis.x * lateral_offset
-    projectile.global_position = origin + side - global_transform.basis.z * 0.28
+    projectile.global_position = spawn_position
 
 func _try_skill(index:int)->bool:
     var costs:Array[float]=[24.0,30.0,36.0,45.0]

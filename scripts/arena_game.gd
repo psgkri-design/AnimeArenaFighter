@@ -6,6 +6,7 @@ const HUDScript = preload("res://scripts/hud.gd")
 const VFXScript = preload("res://scripts/combat_vfx_pool.gd")
 const QualityScript = preload("res://scripts/quality_manager.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
+const ProjectilePoolScript = preload("res://scripts/projectile_pool.gd")
 
 signal sfx_requested(cue, position)
 
@@ -20,6 +21,7 @@ var match_running: bool = false
 var vfx_pool
 var quality_manager
 var audio_manager
+var projectile_pool
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
 var fill_light: DirectionalLight3D
@@ -53,6 +55,10 @@ func _ready() -> void:
     audio_manager.name = "AudioManager"
     add_child(audio_manager)
     sfx_requested.connect(audio_manager.play_sfx)
+
+    projectile_pool = ProjectilePoolScript.new()
+    projectile_pool.name = "ProjectilePool"
+    add_child(projectile_pool)
 
     camera_rig = CameraScript.new()
     camera_rig.name = "CombatCamera"
@@ -402,12 +408,14 @@ func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> v
     player = FighterScript.new()
     player.name = "Player"
     player.configure(selected_player_variant, false, selected_difficulty)
+    player.projectile_pool = projectile_pool
     add_child(player)
     player.global_position = Vector3(0, 0.05, 5.0)
 
     enemy = FighterScript.new()
     enemy.name = "EnemyAI"
     enemy.configure(selected_enemy_variant, true, selected_difficulty)
+    enemy.projectile_pool = projectile_pool
     add_child(enemy)
     enemy.global_position = Vector3(0, 0.05, -5.0)
 
@@ -430,6 +438,7 @@ func _start_round_intro() -> void:
     if DisplayServer.get_name() == "headless":
         player.controls_enabled = true
         enemy.controls_enabled = true
+        hud.set_round_active(true)
         return
     player.controls_enabled = false
     enemy.controls_enabled = false
@@ -441,6 +450,7 @@ func _start_round_intro() -> void:
     camera_rig.add_shake(0.28)
     player.controls_enabled = true
     enemy.controls_enabled = true
+    hud.set_round_active(true)
     await get_tree().create_timer(0.42, false).timeout
     hud.hide_round_banner()
 
@@ -468,6 +478,8 @@ func _return_to_menu() -> void:
     hud.show_main_menu()
 
 func _destroy_fighters() -> void:
+    if projectile_pool != null:
+        projectile_pool.deactivate_all()
     if is_instance_valid(player):
         player.queue_free()
     if is_instance_valid(enemy):
@@ -605,3 +617,5 @@ func _pulse_ultimate_lighting(color: Color) -> void:
 func _on_quality_requested(level: int) -> void:
     if quality_manager != null:
         quality_manager.apply_preset(self, level, vfx_pool)
+    if projectile_pool != null:
+        projectile_pool.set_quality(level)

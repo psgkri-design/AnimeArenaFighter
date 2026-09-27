@@ -617,3 +617,28 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed
 - Release metadata now matches the latest validated combat-reaction/performance revision.
+
+
+## Update 34 — Projectile pooling and round-timer gating
+
+### Added
+- Added a preallocated projectile pool with 20 reusable projectiles: five instances for each fighter projectile style.
+- Added pool-wide quality propagation and deactivate support for rematches / Character Select.
+- Added explicit round-active state to the HUD timer.
+
+### Changed
+- Skill projectiles now reuse Area3D nodes instead of allocating and freeing a new projectile for every shot.
+- Mage Rune Barrage reuses three prebuilt projectiles.
+- LOW / MEDIUM / HIGH projectile light and trail scaling is preserved inside the pool.
+- The 99-second timer starts exactly when FIGHT begins rather than during READY.
+
+### Optimization
+- Removes routine projectile allocation/free churn from ranged combat.
+- Projectile meshes, trails, shader materials and OmniLight3D nodes are constructed once and reused.
+- Quality changes update the preallocated projectile set without rebuilding nodes.
+- Pool is reset between matches to prevent stale projectiles crossing rematches.
+
+### Fixed
+- Round intros no longer consume match time before player/AI control is enabled.
+- Projectile quality scaling no longer compounds light energy/range when presets change repeatedly.
+- CI validates the 20-projectile pool, quality profile, activation/recycling and FIGHT timer gate.

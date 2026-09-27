@@ -83,6 +83,7 @@ var damage_flash: float = 0.0
 var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
+var round_active: bool = false
 
 func _ready() -> void:
     _build_menu()
@@ -191,7 +192,7 @@ func _process(_delta: float) -> void:
         if lock_button != null:
             lock_button.text = "LOCK\nON" if player.lock_on else "LOCK\nOFF"
             lock_button.modulate = Color(1.0,0.84,0.32,1.0) if player.lock_on else Color(0.68,0.72,0.82,0.78)
-        if not result_ui.visible and not get_tree().paused and not timer_finished:
+        if round_active and not result_ui.visible and not get_tree().paused and not timer_finished:
             round_time = maxf(0.0, round_time - _delta)
             round_timer_label.text = "%02d" % int(ceil(round_time))
             if round_time <= 0.0:
@@ -213,6 +214,7 @@ func bind_fighters(p_player, p_enemy) -> void:
     get_tree().paused = false
     round_time = 99.0
     timer_finished = false
+    round_active = false
     last_player_health = p_player.health
     damage_flash = 0.0
     round_timer_label.text = "99"
@@ -234,6 +236,11 @@ func bind_fighters(p_player, p_enemy) -> void:
         skill_names.append(String(skill))
     skill_strip_label.text = "S1  %s    S2  %s    S3  %s    S4  %s" % [skills[0], skills[1], skills[2], skills[3]]
     set_combo(0)
+
+func set_round_active(active_value: bool) -> void:
+    round_active = active_value
+    if active_value:
+        round_timer_label.text = "%02d" % int(ceil(round_time))
 
 func set_combo(value: int) -> void:
     combo_label.text = "" if value <= 1 else "%d HIT COMBO" % value
@@ -259,6 +266,7 @@ func hide_round_banner() -> void:
     tween.tween_callback(func(): round_banner_label.visible = false)
 
 func show_result(text_value: String) -> void:
+    round_active = false
     result_label.text = text_value
     result_label.modulate = Color(1.0,1.0,1.0,0.0)
     result_label.scale = Vector2(1.18,1.18)
@@ -271,6 +279,7 @@ func show_result(text_value: String) -> void:
     tween.tween_property(result_label,"scale",Vector2.ONE,0.24)
 
 func show_main_menu() -> void:
+    round_active = false
     player = null
     enemy = null
     menu_ui.visible = true

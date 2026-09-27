@@ -57,6 +57,9 @@ func _run() -> void:
 
     _check(game.hud != null, "HUD created")
     _check(game.camera_rig != null, "combat camera created")
+    _check(game.projectile_pool != null, "projectile pool created")
+    if game.projectile_pool != null:
+        _check(game.projectile_pool.total_count() == 20, "20 projectiles preallocated")
     _check(game.audio_manager != null, "audio manager created")
     if game.audio_manager != null:
         _check(game.audio_manager.streams.size() >= 6, "procedural combat SFX loaded")
@@ -89,20 +92,21 @@ func _run() -> void:
             continue
 
         _check(game.match_running, "match running for variant %d" % variant)
+        _check(game.hud.round_active, "round timer active after FIGHT gate")
         _check(not game.hud.menu_ui.visible and game.hud.game_ui.visible, "battle HUD active")
         _check(game.player.variant == variant, "selected player data propagated")
         _check(game.enemy.variant == enemy_variant, "selected enemy data propagated")
         _check(game.player.weapon_attachment_count >= 1, "fighter %d has bone-attached weapon asset" % variant)
         _audit_animations(game.player, "fighter_%d" % variant)
-        var projectile = ProjectileScript.new()
-        projectile.configure(game.player, game.enemy, game.player.fighter_color, 100.0, variant)
-        game.add_child(projectile)
-        projectile.global_position = Vector3(0.0, 18.0, 0.0)
-        _check(projectile.style == variant, "projectile style propagated for variant %d" % variant)
-        _check(projectile.trail_segments.size() == 3, "projectile trail built for variant %d" % variant)
-        _check(projectile.quality_level == 1, "MEDIUM projectile quality profile active")
-        _check(projectile.glow_light != null and projectile.glow_light.visible, "MEDIUM projectile glow enabled")
-        projectile.queue_free()
+        var projectile = game.projectile_pool.spawn_projectile(game.player, game.enemy, game.player.fighter_color, 100.0, variant, Vector3(0.0,18.0,0.0))
+        _check(projectile.style == variant, "pooled projectile style propagated for variant %d" % variant)
+        _check(projectile.trail_segments.size() == 3, "pooled projectile trail built for variant %d" % variant)
+        _check(projectile.quality_level == 1, "MEDIUM pooled projectile quality profile active")
+        _check(projectile.glow_light != null and projectile.glow_light.visible, "MEDIUM pooled projectile glow enabled")
+        _check(game.projectile_pool.active_count() >= 1, "projectile pool activates projectile")
+        projectile._recycle()
+        await process_frame
+        _check(game.projectile_pool.active_count() == 0, "projectile returns to pool")
         if variant == 0:
             _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")
             _check(game.player.head_bone >= 0, "head bone resolved for combat look-at")
