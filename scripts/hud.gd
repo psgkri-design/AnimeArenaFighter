@@ -274,8 +274,8 @@ func _build_roster_buttons(for_player: bool) -> void:
     var y: float = 600.0
     for i in range(Roster.count()):
         var data: Dictionary = Roster.get_data(i)
-        var class_name: String = String(data.role).split(" / ")[0].to_upper()
-        var b := _menu_button("%s\n%s" % [data.short, class_name], Vector2(x_start + i * 160.0, y), Vector2(140, 92), data.color.darkened(0.45))
+        var role_class: String = String(data.role).split(" / ")[0].to_upper()
+        var b := _menu_button("%s\n%s" % [data.short, role_class], Vector2(x_start + i * 160.0, y), Vector2(140, 92), data.color.darkened(0.45))
         b.add_theme_font_size_override("font_size", 16)
         b.tooltip_text = data.name
         var index := i

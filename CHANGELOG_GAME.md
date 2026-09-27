@@ -149,3 +149,6 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Preview SubViewport rendering and its node processing are disabled as soon as a match starts.
 - Preview rendering resumes only when returning to Character Select.
 - CI smoke-test now verifies that the preview fighter and its AnimationPlayer are created successfully.
+
+### Fixed — Update 09 hotfix
+- Renamed a Character Select local variable that collided with GDScript's reserved `class_name` keyword and prevented the preview HUD script from compiling.
