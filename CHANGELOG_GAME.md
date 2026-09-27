@@ -483,3 +483,18 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - Ten AudioStreamPlayer3D nodes are created once and reused.
 - No AudioStreamPlayer nodes are instantiated or destroyed during combat.
 - CI smoke validation verifies the audio manager and all six generated cues are available before APK publication.
+
+
+## Update 27 — v0.3.1 release packaging
+
+### Changed
+- Android `versionCode` is now 4.
+- Android `versionName` is now 0.3.1.
+- README now identifies the current stable build as Combat Identity / Audio / UI Polish.
+- Legacy `UPDATE_LOG.txt` has been synchronized with the v0.3.1 milestone.
+
+### Added
+- Release summary now includes fighter-specific projectiles/skills, direct mobile cooldown states and original pooled 3D combat audio.
+
+### Fixed
+- Release metadata now matches the latest validated gameplay/visual revision instead of v0.3.0.

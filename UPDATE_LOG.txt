@@ -112,6 +112,19 @@ VERSION 0.3.0 — 2026-09-27 — VISUAL / ANIMATION / MOBILE POLISH RELEASE
 - CI now blocks APK publication on script/startup/smoke-test failures.
 
 ==================================================
+VERSION 0.3.1 — 2026-09-27 — COMBAT IDENTITY / AUDIO / UI POLISH
+==================================================
+- Added four fighter-specific projectile profiles with distinct speed, homing, shape, hitstun and knockback.
+- Added projectile trail segments and flight-direction alignment.
+- Added fighter-specific Skill 2/3/4 mechanics, including Mage Rune Barrage, Rift Step, Templar guard pressure and Cyber Bunny burst movement.
+- Added improved rotating Character Select preview platform and fighter-colored preview lighting.
+- Added live cooldown, LOW-energy and ULT READY states directly to mobile combat buttons.
+- Added six original procedurally generated combat SFX and a pooled 3D audio manager.
+- Added pooled ground shockwave/dust effects and Ultimate lighting pulse.
+- Retained full Character Select -> Start Battle -> combat -> KO -> rematch -> menu smoke validation.
+- Updated Android release metadata to versionCode 4 / versionName 0.3.1.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.
