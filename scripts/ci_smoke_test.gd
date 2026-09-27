@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ProjectileScript = preload("res://scripts/projectile.gd")
+
 var failures: Array[String] = []
 
 func _initialize() -> void:
@@ -84,6 +86,13 @@ func _run() -> void:
         _check(game.enemy.variant == enemy_variant, "selected enemy data propagated")
         _check(game.player.weapon_attachment_count >= 1, "fighter %d has bone-attached weapon asset" % variant)
         _audit_animations(game.player, "fighter_%d" % variant)
+        var projectile = ProjectileScript.new()
+        projectile.configure(game.player, game.enemy, game.player.fighter_color, 100.0, variant)
+        game.add_child(projectile)
+        projectile.global_position = Vector3(0.0, 18.0, 0.0)
+        _check(projectile.style == variant, "projectile style propagated for variant %d" % variant)
+        _check(projectile.trail_segments.size() == 3, "projectile trail built for variant %d" % variant)
+        projectile.queue_free()
         if variant == 0:
             _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")
             _check(game.player.head_bone >= 0, "head bone resolved for combat look-at")

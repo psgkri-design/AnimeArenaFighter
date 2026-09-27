@@ -742,7 +742,7 @@ func _try_skill(index:int)->bool:
             _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
             combat_fx.emit(_fighter_attack_fx_kind("skill"), _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.15)
             var projectile=ProjectileScript.new()
-            projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale)
+            projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale,variant)
             get_tree().current_scene.add_child(projectile)
             projectile.global_position=global_position+Vector3.UP*1.25-global_transform.basis.z*0.8
         1:

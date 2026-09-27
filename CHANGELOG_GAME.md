@@ -388,3 +388,27 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed
 - Release metadata no longer identifies new builds as the original 0.1.0 prototype.
+
+
+## Update 23 — Fighter-specific projectile identities
+
+### Added
+- Added four distinct projectile behavior profiles driven by fighter variant.
+- Succubus Assassin fires a small fast homing orb with lighter knockback.
+- Arcane Mage fires a larger slower arcane sphere with stronger homing presence and heavier hit reaction.
+- Templar Knight fires a long heavy energy lance with the strongest projectile knockback and guard pressure.
+- Cyber Bunny fires a very fast compact plasma bolt tuned for quick ranged pressure.
+- Added three prebuilt energy trail segments to every projectile.
+
+### Changed
+- Projectile speed, lifetime, homing, collision radius, light radius, hitstun, launch, block damage and impact strength now reinforce each fighter archetype.
+- Projectile visuals align to flight direction so lance/plasma silhouettes and tail segments read correctly in motion.
+- Mage keeps the layered dual-orbit presentation while other fighters use lighter ring treatments.
+
+### Graphics
+- Ranged attacks now differ by shape and motion instead of color alone.
+- Projectile pulse/spin rates are variant-specific.
+
+### Optimization
+- Trail segments are created once with the projectile and reused for its full lifetime.
+- CI smoke validation now checks style propagation and the prebuilt projectile trail for all four variants.
