@@ -271,13 +271,23 @@ func _get_adult_animation_library() -> AnimationLibrary:
         return null
     var source_root := source_scene.instantiate()
     var source_player := _find_animation_player(source_root)
-    if source_player != null:
-        for library_name in source_player.get_animation_library_list():
-            var library := source_player.get_animation_library(library_name)
-            if library != null and library.has_animation("Idle_Loop") and library.has_animation("Sword_Attack"):
-                adult_animation_library_cache = library
-                break
+    if source_player == null:
+        source_root.free()
+        return null
+
+    var merged := AnimationLibrary.new()
+    for animation_name in source_player.get_animation_list():
+        var animation := source_player.get_animation(animation_name)
+        if animation == null:
+            continue
+        var parts := String(animation_name).split("/")
+        var clean_name := StringName(parts[parts.size() - 1])
+        if not merged.has_animation(clean_name):
+            merged.add_animation(clean_name, animation)
+
     source_root.free()
+    if merged.has_animation("Idle_Loop") and merged.has_animation("Sword_Attack"):
+        adult_animation_library_cache = merged
     return adult_animation_library_cache
 
 func _library_drives_current_skeleton(library: AnimationLibrary) -> bool:
