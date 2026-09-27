@@ -138,6 +138,20 @@ VERSION 0.3.2 — 2026-09-27 — COMBAT REACTIONS / KO / ANDROID PERFORMANCE
 - Updated Android release metadata to versionCode 5 / versionName 0.3.2.
 
 ==================================================
+VERSION 0.3.3 — 2026-09-27 — MOVEMENT / GROUNDING / RUNTIME OPTIMIZATION
+==================================================
+- Added a 20-instance reusable projectile pool: five projectiles for each fighter style.
+- Mage Rune Barrage now reuses pooled projectiles instead of allocating three Area3D nodes per cast.
+- Fixed the 99-second round timer so it starts exactly on FIGHT after the READY intro.
+- Added lightweight slope-aware foot grounding using two SkeletonIK3D leg chains and 20 Hz ground sampling.
+- Added quality-scaled soft contact shadows for both fighters; LOW uses stronger grounding while realtime shadows are disabled.
+- Added anime speed lines to the existing damage-vignette shader with LOW / MEDIUM / HIGH intensity scaling.
+- Preserved projectile light/trail quality scaling inside the pool and fixed repeated quality changes so light strength does not compound.
+- Retained heavy-hit knockdown/get-up, cinematic KO/victory, pooled VFX/audio, fighter-specific skills/projectiles and mobile combat-state feedback.
+- Full Character Select -> Start Battle -> combat -> projectile recycle -> knockdown -> KO -> rematch -> menu smoke validation is required before APK publication.
+- Updated Android release metadata to versionCode 6 / versionName 0.3.3.
+
+==================================================
 RULE FOR FUTURE UPDATES
 ==================================================
 Every meaningful repository/gameplay/visual/build change will be appended to this file with date and version/build information.

@@ -4,7 +4,7 @@ Android 3D anime arena-fighter prototype built with **Godot 4.7.2**.
 
 ## Current release
 
-**v0.3.2 Combat Reactions / KO / Android Performance**
+**v0.3.3 Movement / Grounding / Runtime Optimization**
 
 - Landscape 16:9 Android build.
 - Four playable fighters with rigged models, fighter-specific animations and CC0 weapon assets.
@@ -16,6 +16,10 @@ Android 3D anime arena-fighter prototype built with **Godot 4.7.2**.
 - Live mobile skill, stamina, Dash, Block, Lock and Ultimate button states.
 - LOW / MEDIUM / HIGH graphics presets with projectile-light and trail scaling.
 - Shared static arena materials to reduce material/SetPass overhead on Android.
+- 20 reusable pooled projectiles with LOW / MEDIUM / HIGH light/trail scaling.
+- Slope-aware foot grounding IK and quality-scaled fighter contact shadows.
+- Anime speed-line feedback integrated into the existing damage HUD shader.
+- Round timer starts on FIGHT, so the READY intro no longer consumes match time.
 - Automated Android APK build plus full headless gameplay smoke validation.
 
 See `CHANGELOG_GAME.md` for detailed changes and `assets/ThirdParty/ASSET_LICENSES.md` for external-asset licenses.

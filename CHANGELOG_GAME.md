@@ -709,3 +709,21 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 - No extra fullscreen node, texture, particle system or draw pass was added.
 - The effect reuses the existing damage-overlay ColorRect and only updates scalar/color uniforms.
 - CI validates the speed-line shader parameter path.
+
+
+## Update 38 — v0.3.3 stable release packaging
+
+### Changed
+- Android `versionCode` is now 6.
+- Android `versionName` is now 0.3.3.
+- README now identifies the current stable build as Movement / Grounding / Runtime Optimization.
+- Legacy `UPDATE_LOG.txt` has been synchronized with the v0.3.3 milestone.
+
+### Added
+- Release summary now includes pooled projectiles, FIGHT-gated round timing, foot grounding IK, quality-scaled contact shadows and anime speed lines.
+
+### Optimization
+- v0.3.3 consolidates the latest movement/grounding feedback without adding expensive new fullscreen passes or runtime projectile allocation.
+
+### Fixed
+- Release metadata now matches the latest validated post-v0.3.2 runtime revision.
