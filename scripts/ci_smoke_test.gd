@@ -85,6 +85,9 @@ func _run() -> void:
         _audit_animations(game.player, "fighter_%d" % variant)
         if variant == 0:
             _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")
+            _check(game.player.head_bone >= 0, "head bone resolved for combat look-at")
+            _check(game.player.chest_bone >= 0, "chest bone resolved for combat look-at")
+            _check(game.player.hand_bone >= 0, "right hand slot resolved for combat VFX")
 
         game.player.is_ai = false
         game.enemy.is_ai = false

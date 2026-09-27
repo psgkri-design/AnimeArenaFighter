@@ -218,3 +218,24 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Fixed
 - Headless CI bypasses the presentation delay so automated combat validation remains fast and deterministic.
+
+## Update 14 — Procedural combat look-at and bone-anchored VFX
+
+### Added
+- Added runtime Skeleton3D discovery for imported fighter rigs.
+- Added validated head/chest bone lookup using the actual KayKit skeleton names.
+- Added subtle procedural combat look-at on chest and head while a valid opponent is targeted.
+- Added right-hand-slot lookup and a bone-derived combat FX origin.
+
+### Changed
+- Slash/charge VFX now originate from the fighter's animated right-hand attachment point instead of the CharacterBody center.
+- Look-at offsets are deliberately clamped and low-weight so imported attack/reaction animations remain dominant.
+
+### Animation
+- Fighters maintain stronger eye-line/body awareness toward their opponent while preserving authored AnimationPlayer clips.
+- Head/chest look-at is skipped on death and when no target exists.
+
+### Optimization
+- Skeleton/bone references are resolved once during model setup.
+- Procedural look-at touches only two bones and avoids full-body IK solvers on the flat arena.
+- CI now verifies head, chest and right-hand-slot bones before APK publication.

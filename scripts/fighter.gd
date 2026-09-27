@@ -58,6 +58,10 @@ var combo_hits: int = 0
 var skill_cooldowns: Array[float] = [0.0,0.0,0.0,0.0]
 var model_root: Node3D
 var animation_player: AnimationPlayer = null
+var skeleton: Skeleton3D = null
+var head_bone: int = -1
+var chest_bone: int = -1
+var hand_bone: int = -1
 var last_animation: StringName = &""
 var hit_reaction_toggle: bool = false
 var visual_phase: float = 0.0
@@ -134,6 +138,11 @@ func _try_build_external_model() -> bool:
     model_root.add_child(visual)
     _stylize_external_materials(visual)
     animation_player = _find_animation_player(visual)
+    skeleton = _find_skeleton(visual)
+    if skeleton != null:
+        head_bone = skeleton.find_bone("head")
+        chest_bone = skeleton.find_bone("chest")
+        hand_bone = skeleton.find_bone("handslot.r")
     _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
 
@@ -165,6 +174,42 @@ func _stylize_external_materials(node: Node) -> void:
                     mesh_instance.set_surface_override_material(surface_index, stylized)
     for child in node.get_children():
         _stylize_external_materials(child)
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+    if node is Skeleton3D:
+        return node as Skeleton3D
+    for child in node.get_children():
+        var found: Skeleton3D = _find_skeleton(child)
+        if found != null:
+            return found
+    return null
+
+func _combat_fx_origin() -> Vector3:
+    if skeleton != null and hand_bone >= 0:
+        var bone_pose: Transform3D = skeleton.get_bone_global_pose(hand_bone)
+        return (skeleton.global_transform * bone_pose).origin
+    return global_position + Vector3.UP * 1.15 - global_transform.basis.z * 0.75
+
+func _apply_combat_look_at() -> void:
+    if skeleton == null or not is_instance_valid(target) or state == State.DEAD:
+        return
+    var target_position: Vector3 = target.global_position + Vector3.UP * 1.35
+    var local_target: Vector3 = global_basis.inverse() * (target_position - (global_position + Vector3.UP * 1.35))
+    if local_target.length_squared() < 0.001:
+        return
+    local_target = local_target.normalized()
+    var yaw: float = clampf(atan2(-local_target.x, -local_target.z), -0.34, 0.34)
+    var pitch: float = clampf(asin(clampf(local_target.y, -1.0, 1.0)), -0.18, 0.18)
+
+    if chest_bone >= 0:
+        var chest_pose: Transform3D = skeleton.get_bone_global_pose(chest_bone)
+        chest_pose.basis = Basis(Vector3.UP, yaw * 0.16) * Basis(Vector3.RIGHT, -pitch * 0.10) * chest_pose.basis
+        skeleton.set_bone_global_pose_override(chest_bone, chest_pose, 0.16, false)
+
+    if head_bone >= 0:
+        var head_pose: Transform3D = skeleton.get_bone_global_pose(head_bone)
+        head_pose.basis = Basis(Vector3.UP, yaw * 0.42) * Basis(Vector3.RIGHT, -pitch * 0.30) * head_pose.basis
+        skeleton.set_bone_global_pose_override(head_bone, head_pose, 0.34, false)
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
     if node is AnimationPlayer:
@@ -277,6 +322,7 @@ func _sync_animation() -> void:
 func _update_visuals(delta: float) -> void:
     _animate_model(delta)
     _sync_animation()
+    _apply_combat_look_at()
 
 func _decorate_external_model() -> void:
     match variant:
@@ -563,7 +609,7 @@ func _start_attack(data:Dictionary)->void:
     _play_animation(_attack_animation(anim_kind, anim_index), 0.06, anim_speed, true)
     var fx_kind: String = "aura" if anim_kind == "ultimate" else ("charge" if anim_kind == "skill" and variant == 1 else "slash")
     var fx_strength: float = 1.75 if anim_kind == "ultimate" else (1.25 if anim_kind == "skill" or anim_kind == "heavy" else 0.75)
-    combat_fx.emit(fx_kind, global_position + Vector3.UP * 1.15 - global_transform.basis.z * 0.85, -global_transform.basis.z, fighter_color, fx_strength)
+    combat_fx.emit(fx_kind, _combat_fx_origin(), -global_transform.basis.z, fighter_color, fx_strength)
 
 func _process_attack(delta:float)->void:
     attack_timer+=delta
@@ -625,7 +671,7 @@ func _try_skill(index:int)->bool:
         0:
             skill_cooldowns[index]=4.0
             _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
-            combat_fx.emit("charge", global_position + Vector3.UP * 1.25, -global_transform.basis.z, fighter_color, 1.15)
+            combat_fx.emit("charge", _combat_fx_origin(), -global_transform.basis.z, fighter_color, 1.15)
             var projectile=ProjectileScript.new()
             projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale)
             get_tree().current_scene.add_child(projectile)
