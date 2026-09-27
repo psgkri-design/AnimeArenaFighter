@@ -81,41 +81,74 @@ func _build_world() -> void:
     environment.background_mode = Environment.BG_SKY
     var sky := Sky.new()
     var sky_mat := ShaderMaterial.new()
-    sky_mat.shader = load("res://shaders/cyber_sky.gdshader")
+    sky_mat.shader = load("res://shaders/anime_day_sky.gdshader")
     sky.sky_material = sky_mat
     environment.sky = sky
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    environment.ambient_light_color = Color(0.20, 0.27, 0.43)
-    environment.ambient_light_energy = 0.72
+    environment.ambient_light_color = Color(0.62, 0.74, 0.92)
+    environment.ambient_light_energy = 0.92
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     environment.glow_enabled = true
-    environment.glow_bloom = 0.12
-    environment.glow_intensity = 0.20
+    environment.glow_bloom = 0.06
+    environment.glow_intensity = 0.10
     environment.fog_enabled = true
-    environment.fog_light_color = Color(0.08, 0.12, 0.24)
-    environment.fog_light_energy = 0.52
-    environment.fog_density = 0.0032
-    environment.fog_depth_begin = 22.0
-    environment.fog_depth_end = 95.0
+    environment.fog_light_color = Color(0.58, 0.70, 0.86)
+    environment.fog_light_energy = 0.82
+    environment.fog_density = 0.0016
+    environment.fog_depth_begin = 34.0
+    environment.fog_depth_end = 120.0
     world_environment.environment = environment
     add_child(world_environment)
 
     key_light = DirectionalLight3D.new()
-    key_light.rotation_degrees = Vector3(-48, -32, 0)
-    key_light.light_color = Color(0.72, 0.82, 1.0)
-    key_light.light_energy = 1.3
+    key_light.rotation_degrees = Vector3(-52, -30, 0)
+    key_light.light_color = Color(1.0, 0.97, 0.90)
+    key_light.light_energy = 1.52
     key_light.shadow_enabled = true
     key_light.directional_shadow_max_distance = 40.0
     add_child(key_light)
 
     fill_light = DirectionalLight3D.new()
-    fill_light.rotation_degrees = Vector3(-25, 145, 0)
-    fill_light.light_color = Color(1.0, 0.20, 0.32)
-    fill_light.light_energy = 0.38
+    fill_light.rotation_degrees = Vector3(-24, 145, 0)
+    fill_light.light_color = Color(0.42, 0.68, 1.0)
+    fill_light.light_energy = 0.24
     fill_light.shadow_enabled = false
     add_child(fill_light)
 
-    _build_sky_landmarks()
+    _build_megastructure_backdrop()
+
+func _build_megastructure_backdrop() -> void:
+    var structures := MultiMeshInstance3D.new()
+    structures.name = "FloatingMegastructure"
+
+    var block_mesh := BoxMesh.new()
+    block_mesh.size = Vector3(1.0,1.0,1.0)
+
+    var multi := MultiMesh.new()
+    multi.transform_format = MultiMesh.TRANSFORM_3D
+    multi.mesh = block_mesh
+    multi.instance_count = 20
+
+    for i in range(20):
+        var angle: float = TAU * float(i) / 20.0 + float(i % 4) * 0.11
+        var radius: float = 35.0 + float((i * 7) % 6) * 3.2
+        var height_value: float = 9.0 + float((i * 5) % 8) * 2.4
+        var origin := Vector3(cos(angle) * radius, height_value, sin(angle) * radius)
+        var basis := Basis(Vector3.UP, -angle + float(i % 5) * 0.16)
+        basis = basis.rotated(Vector3.RIGHT, -0.16 + float(i % 3) * 0.13)
+        var sx: float = 8.0 + float(i % 4) * 4.5
+        var sy: float = 1.4 + float((i * 3) % 5) * 1.15
+        var sz: float = 3.5 + float((i * 2) % 4) * 2.2
+        basis = basis.scaled(Vector3(sx,sy,sz))
+        multi.set_instance_transform(i, Transform3D(basis, origin))
+
+    structures.multimesh = multi
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Color(0.34,0.41,0.54)
+    mat.metallic = 0.03
+    mat.roughness = 0.88
+    structures.material_override = mat
+    add_child(structures)
 
 func _build_sky_landmarks() -> void:
     var moon := MeshInstance3D.new()
@@ -187,9 +220,9 @@ func _build_arena() -> void:
     floor_mesh.mesh = cylinder
     floor_mesh.position.y = -0.3
     var floor_mat := StandardMaterial3D.new()
-    floor_mat.albedo_color = Color(0.045, 0.058, 0.095)
-    floor_mat.metallic = 0.36
-    floor_mat.roughness = 0.50
+    floor_mat.albedo_color = Color(0.22, 0.27, 0.37)
+    floor_mat.metallic = 0.04
+    floor_mat.roughness = 0.90
     floor_mesh.material_override = floor_mat
     floor_body.add_child(floor_mesh)
 
@@ -201,9 +234,9 @@ func _build_arena() -> void:
     floor_collision.position.y = -0.3
     floor_body.add_child(floor_collision)
 
-    _add_arena_disc(arena_root, 20.0, -0.015, Color(0.03, 0.09, 0.19), 0.03)
-    _add_arena_disc(arena_root, 12.0, 0.01, Color(0.06, 0.12, 0.24), 0.025)
-    _add_arena_disc(arena_root, 4.2, 0.035, Color(0.10, 0.20, 0.34), 0.02)
+    _add_arena_disc(arena_root, 20.0, -0.015, Color(0.24, 0.30, 0.41), 0.03)
+    _add_arena_disc(arena_root, 12.0, 0.01, Color(0.28, 0.35, 0.48), 0.025)
+    _add_arena_disc(arena_root, 4.2, 0.035, Color(0.32, 0.41, 0.55), 0.02)
     _add_floor_linework(arena_root)
 
     for i in range(16):
@@ -257,25 +290,25 @@ func _add_floor_linework(parent: Node3D) -> void:
     instance.multimesh = multi
     var mat := StandardMaterial3D.new()
     mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    mat.albedo_color = Color(0.06, 0.34, 0.72)
+    mat.albedo_color = Color(0.18, 0.39, 0.66)
     mat.emission_enabled = true
-    mat.emission = Color(0.08, 0.54, 1.0)
-    mat.emission_energy_multiplier = 1.45
+    mat.emission = Color(0.16, 0.46, 0.78)
+    mat.emission_energy_multiplier = 0.55
     instance.material_override = mat
     parent.add_child(instance)
 
 func _build_shared_arena_materials() -> void:
     city_body_material = StandardMaterial3D.new()
-    city_body_material.albedo_color = Color(0.018,0.025,0.052)
-    city_body_material.metallic = 0.48
-    city_body_material.roughness = 0.42
+    city_body_material.albedo_color = Color(0.22,0.28,0.39)
+    city_body_material.metallic = 0.03
+    city_body_material.roughness = 0.86
 
-    city_band_blue_material = _make_shared_emissive(Color(0.08,0.48,1.0),1.7,0.34)
-    city_band_red_material = _make_shared_emissive(Color(1.0,0.08,0.34),1.7,0.34)
-    pillar_blue_material = _make_shared_emissive(Color(0.08,0.50,1.0),1.75,0.40)
-    pillar_red_material = _make_shared_emissive(Color(1.0,0.12,0.26),1.75,0.40)
-    gate_blue_material = _make_shared_emissive(Color(0.10,0.58,1.0),1.9,0.30)
-    gate_red_material = _make_shared_emissive(Color(1.0,0.10,0.36),1.9,0.30)
+    city_band_blue_material = _make_shared_emissive(Color(0.20,0.58,0.92),0.62,0.66)
+    city_band_red_material = _make_shared_emissive(Color(0.50,0.38,0.74),0.48,0.70)
+    pillar_blue_material = _make_shared_emissive(Color(0.24,0.58,0.90),0.58,0.72)
+    pillar_red_material = _make_shared_emissive(Color(0.48,0.38,0.68),0.46,0.74)
+    gate_blue_material = _make_shared_emissive(Color(0.30,0.64,0.96),0.66,0.68)
+    gate_red_material = _make_shared_emissive(Color(0.54,0.42,0.74),0.52,0.72)
 
 func _make_shared_emissive(color: Color, energy: float, roughness_value: float) -> StandardMaterial3D:
     var mat := StandardMaterial3D.new()
@@ -367,9 +400,9 @@ func _add_arena_disc(parent: Node3D, radius: float, y: float, color: Color, heig
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
     mat.emission_enabled = true
-    mat.emission = color * 0.8
-    mat.emission_energy_multiplier = 0.35
-    mat.roughness = 0.4
+    mat.emission = color * 0.24
+    mat.emission_energy_multiplier = 0.16
+    mat.roughness = 0.86
     mesh_instance.material_override = mat
     parent.add_child(mesh_instance)
 

@@ -760,3 +760,26 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Fixed
 - Character scale/framing no longer makes combatants read as miniature figures inside an oversized arena.
 - CI now fails if any fighter falls back from the adult rig or if the adult animation library does not drive the target skeleton.
+
+
+## Update 40 — Reference-style daylight arena art direction
+
+### Added
+- Added a bright procedural anime-day sky with blue zenith, pale horizon, soft cloud bands and a restrained sun glow.
+- Added 20 large floating megastructure slabs rendered through one MultiMesh to echo the oversized architectural scale in the supplied visual reference.
+
+### Changed
+- Replaced the dark magenta/cyan cyber-night presentation with a cool daylight blue/grey palette.
+- Key light is now a stronger warm-white sun; fill light is a subtle cool-blue bounce.
+- Fog is brighter, thinner and starts farther from the fight, creating atmospheric depth without making the scene muddy.
+- Arena floor, rings, city towers, gates and pillars use rough light blue-grey materials with restrained emission instead of high-metallic neon.
+- The old energy moon/sky shards remain in code only as an unused fallback and are no longer instantiated.
+
+### Graphics
+- The environment now emphasizes large geometric forms, clear daylight silhouettes and blue-sky contrast closer to the supplied reference.
+- Central combat space stays uncluttered while distant oversized structures create scale.
+
+### Optimization
+- Floating architecture uses a single MultiMesh draw submission.
+- No new realtime lights were added.
+- Lower emission and metallic response reduce the plastic/neon toy appearance without adding shader passes.
