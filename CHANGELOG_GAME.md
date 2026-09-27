@@ -300,3 +300,18 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - Camera arc uses simple interpolation and vector math only; it adds no new scene nodes or allocations during combat.
+
+## Update 18 — Damage and low-health screen feedback
+
+### Added
+- Added a lightweight fullscreen HUD shader for edge-based low-health danger feedback.
+- Added a short damage flash pulse whenever the player loses health.
+- Added gradual danger intensity below roughly 38% health instead of a sudden binary warning.
+
+### Graphics
+- Damage feedback is strongest near the screen edges so the center combat area remains readable.
+- Low-health tint is restrained and compatible with the existing anime/cyber palette.
+
+### Optimization
+- Uses one fullscreen CanvasItem shader and two scalar uniforms.
+- No extra particles, textures or per-hit scene allocation are required.

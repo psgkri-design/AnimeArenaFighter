@@ -64,6 +64,10 @@ var lock_indicator: Label
 var lock_target_marker: Label
 var ultimate_status_label: Label
 var round_banner_label: Label
+var damage_overlay: ColorRect
+var damage_overlay_material: ShaderMaterial
+var last_player_health: float = -1.0
+var damage_flash: float = 0.0
 var skill_names: Array[String] = []
 var round_time: float = 99.0
 var timer_finished: bool = false
@@ -79,6 +83,15 @@ func _process(_delta: float) -> void:
     if game_ui.visible and is_instance_valid(player) and is_instance_valid(enemy):
         player_hp.max_value = player.max_health
         player_hp.value = player.health
+        if last_player_health >= 0.0 and player.health < last_player_health - 0.1:
+            damage_flash = 1.0
+        last_player_health = player.health
+        damage_flash = move_toward(damage_flash, 0.0, _delta * 5.2)
+        var health_ratio: float = clampf(player.health / maxf(player.max_health, 1.0), 0.0, 1.0)
+        var danger_strength: float = clampf((0.38 - health_ratio) / 0.38, 0.0, 1.0)
+        if damage_overlay_material != null:
+            damage_overlay_material.set_shader_parameter("danger", danger_strength)
+            damage_overlay_material.set_shader_parameter("damage_flash", damage_flash)
         enemy_hp.max_value = enemy.max_health
         enemy_hp.value = enemy.health
         stamina_bar.max_value = player.max_stamina
@@ -127,6 +140,8 @@ func bind_fighters(p_player, p_enemy) -> void:
     get_tree().paused = false
     round_time = 99.0
     timer_finished = false
+    last_player_health = p_player.health
+    damage_flash = 0.0
     round_timer_label.text = "99"
 
     var player_data: Dictionary = Roster.get_data(int(p_player.variant))
@@ -463,6 +478,14 @@ func _build_game_ui() -> void:
     game_ui = Control.new()
     game_ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(game_ui)
+
+    damage_overlay = ColorRect.new()
+    damage_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    damage_overlay_material = ShaderMaterial.new()
+    damage_overlay_material.shader = load("res://shaders/hud_vignette.gdshader")
+    damage_overlay.material = damage_overlay_material
+    game_ui.add_child(damage_overlay)
 
     combat_player_badge = _label("P1",Vector2(18,20),20,Color.WHITE)
     combat_player_badge.size = Vector2(48,68)
