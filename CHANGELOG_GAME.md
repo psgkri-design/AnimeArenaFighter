@@ -436,3 +436,28 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - Mage barrage reuses the existing projectile implementation and pooled combat VFX.
 - No new per-frame systems were added.
+
+
+## Update 25 — Character Select presentation and mobile cooldown buttons
+
+### Added
+- Added a slowly rotating live 3D fighter preview presentation.
+- Added an emissive fighter-colored preview platform with eight rotating accent markers.
+- Preview key/rim lights now inherit the currently previewed fighter's color identity.
+- Added direct cooldown text to S1–S4 mobile buttons.
+- Added LOW-energy state directly on skill buttons.
+- Added pulsing ULT READY state and live Ultimate percentage directly on the Ultimate button.
+
+### Changed
+- Character Select preview now reads as a deliberate fighting-game presentation instead of a static viewport.
+- Mobile combat buttons provide actionable state without requiring the player to read the top skill strip.
+
+### UI
+- Skill buttons dim while cooling down and show remaining seconds.
+- Ready buttons restore full contrast; energy-starved skills show LOW.
+- Ultimate button pulses only when the meter is actually ready.
+
+### Optimization
+- Preview platform uses simple unshaded geometry and is disabled together with the preview viewport when combat begins.
+- Button state updates reuse existing Button nodes; no UI nodes are created during combat.
+- CI now verifies preview platform and mobile skill/Ultimate controls exist.

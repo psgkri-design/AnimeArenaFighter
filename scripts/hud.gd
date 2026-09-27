@@ -9,6 +9,7 @@ signal quality_requested(level)
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
 const Roster = preload("res://scripts/character_data.gd")
 const FighterScript = preload("res://scripts/fighter.gd")
+const SKILL_COSTS: Array[float] = [24.0,30.0,36.0,45.0]
 
 var player = null
 var enemy = null
@@ -42,6 +43,10 @@ var preview_root: Node3D
 var preview_camera: Camera3D
 var preview_fighter = null
 var preview_label: Label
+var preview_key_light: DirectionalLight3D
+var preview_rim_light: DirectionalLight3D
+var preview_platform_root: Node3D
+var preview_platform_material: StandardMaterial3D
 var preview_variant: int = 0
 var preview_context: String = "PLAYER"
 
@@ -64,6 +69,8 @@ var lock_indicator: Label
 var lock_target_marker: Label
 var ultimate_status_label: Label
 var round_banner_label: Label
+var skill_buttons: Array[Button] = []
+var ultimate_button: Button
 var damage_overlay: ColorRect
 var damage_overlay_material: ShaderMaterial
 var last_player_health: float = -1.0
@@ -80,6 +87,11 @@ func _ready() -> void:
     show_main_menu()
 
 func _process(_delta: float) -> void:
+    if menu_ui.visible and is_instance_valid(preview_fighter):
+        preview_fighter.rotation.y += _delta * 0.30
+        if preview_platform_root != null:
+            preview_platform_root.rotation.y -= _delta * 0.42
+
     if game_ui.visible and is_instance_valid(player) and is_instance_valid(enemy):
         player_hp.max_value = player.max_health
         player_hp.value = player.health
@@ -117,7 +129,27 @@ func _process(_delta: float) -> void:
                 var cooldown: float = player.skill_cooldowns[i]
                 var suffix: String = " %.1f" % cooldown if cooldown > 0.05 else " READY"
                 cooldown_parts.append("S%d %s%s" % [i + 1, skill_names[i], suffix])
+                if i < skill_buttons.size():
+                    var skill_button: Button = skill_buttons[i]
+                    if cooldown > 0.05:
+                        skill_button.text = "S%d\n%.1f" % [i + 1, cooldown]
+                        skill_button.modulate = Color(0.58,0.64,0.74,0.80)
+                    elif player.energy < SKILL_COSTS[i]:
+                        skill_button.text = "S%d\nLOW" % [i + 1]
+                        skill_button.modulate = Color(0.72,0.72,0.76,0.66)
+                    else:
+                        skill_button.text = "S%d\nREADY" % [i + 1]
+                        skill_button.modulate = Color.WHITE
             skill_strip_label.text = "    ".join(cooldown_parts)
+
+        if ultimate_button != null:
+            if player.ultimate >= 99.9:
+                ultimate_button.text = "ULT\nREADY"
+                var ult_pulse: float = 0.84 + sin(Time.get_ticks_msec() * 0.012) * 0.14
+                ultimate_button.modulate = Color(1.0,0.88,0.38,ult_pulse)
+            else:
+                ultimate_button.text = "ULT\n%02d%%" % int(player.ultimate)
+                ultimate_button.modulate = Color(0.78,0.82,0.92,0.90)
         if not result_ui.visible and not get_tree().paused and not timer_finished:
             round_time = maxf(0.0, round_time - _delta)
             round_timer_label.text = "%02d" % int(ceil(round_time))
@@ -384,19 +416,52 @@ func _build_character_preview() -> void:
     preview_root.name = "CharacterPreviewRoot"
     preview_viewport.add_child(preview_root)
 
-    var key := DirectionalLight3D.new()
-    key.rotation_degrees = Vector3(-38, -28, 0)
-    key.light_color = Color(0.80,0.90,1.0)
-    key.light_energy = 1.55
-    key.shadow_enabled = false
-    preview_root.add_child(key)
+    preview_key_light = DirectionalLight3D.new()
+    preview_key_light.rotation_degrees = Vector3(-38, -28, 0)
+    preview_key_light.light_color = Color(0.80,0.90,1.0)
+    preview_key_light.light_energy = 1.55
+    preview_key_light.shadow_enabled = false
+    preview_root.add_child(preview_key_light)
 
-    var rim := DirectionalLight3D.new()
-    rim.rotation_degrees = Vector3(-20, 150, 0)
-    rim.light_color = Color(1.0,0.18,0.42)
-    rim.light_energy = 0.65
-    rim.shadow_enabled = false
-    preview_root.add_child(rim)
+    preview_rim_light = DirectionalLight3D.new()
+    preview_rim_light.rotation_degrees = Vector3(-20, 150, 0)
+    preview_rim_light.light_color = Color(1.0,0.18,0.42)
+    preview_rim_light.light_energy = 0.72
+    preview_rim_light.shadow_enabled = false
+    preview_root.add_child(preview_rim_light)
+
+    preview_platform_root = Node3D.new()
+    preview_platform_root.name = "PreviewPlatform"
+    preview_platform_root.position = Vector3(0.0,-0.88,0.0)
+    preview_root.add_child(preview_platform_root)
+
+    preview_platform_material = StandardMaterial3D.new()
+    preview_platform_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    preview_platform_material.albedo_color = Color(0.08,0.42,0.82)
+    preview_platform_material.emission_enabled = true
+    preview_platform_material.emission = Color(0.10,0.58,1.0)
+    preview_platform_material.emission_energy_multiplier = 1.55
+
+    var platform_disc := MeshInstance3D.new()
+    var platform_mesh := CylinderMesh.new()
+    platform_mesh.top_radius = 1.02
+    platform_mesh.bottom_radius = 1.02
+    platform_mesh.height = 0.045
+    platform_mesh.radial_segments = 32
+    platform_disc.mesh = platform_mesh
+    platform_disc.material_override = preview_platform_material
+    preview_platform_root.add_child(platform_disc)
+
+    for marker_index in range(8):
+        var marker := MeshInstance3D.new()
+        var marker_mesh := BoxMesh.new()
+        marker_mesh.size = Vector3(0.12,0.035,0.42)
+        marker.mesh = marker_mesh
+        marker.material_override = preview_platform_material
+        var marker_angle: float = TAU * float(marker_index) / 8.0
+        marker.position = Vector3(cos(marker_angle)*1.20,0.035,sin(marker_angle)*1.20)
+        marker.rotation.y = -marker_angle
+        preview_platform_root.add_child(marker)
 
     preview_camera = Camera3D.new()
     preview_camera.position = Vector3(0.0, 1.35, 4.4)
@@ -420,6 +485,15 @@ func _refresh_preview() -> void:
     preview_fighter.position = Vector3(0.0, -0.92, 0.0)
     preview_fighter.rotation.y = PI
     preview_fighter.set_physics_process(false)
+    var preview_data: Dictionary = Roster.get_data(preview_variant)
+    var preview_color: Color = preview_data.color
+    if preview_platform_material != null:
+        preview_platform_material.albedo_color = preview_color.darkened(0.42)
+        preview_platform_material.emission = preview_color
+    if preview_key_light != null:
+        preview_key_light.light_color = preview_color.lightened(0.48)
+    if preview_rim_light != null:
+        preview_rim_light.light_color = preview_color.lerp(Color(1.0,0.18,0.42),0.40)
     preview_label.text = "%s PREVIEW" % preview_context
 
 func _refresh_roster_styles() -> void:
@@ -580,11 +654,12 @@ func _build_game_ui() -> void:
     _add_action("DASH","dash",Vector2(1260,865),Vector2(125,85))
     _add_action("JUMP","jump",Vector2(1735,880),Vector2(130,88))
     _add_action("BLOCK","block",Vector2(1420,690),Vector2(135,95))
-    _add_action("S1","skill_1",Vector2(1110,690),Vector2(105,82))
-    _add_action("S2","skill_2",Vector2(1218,610),Vector2(105,82))
-    _add_action("S3","skill_3",Vector2(1328,585),Vector2(105,82))
-    _add_action("S4","skill_4",Vector2(1438,595),Vector2(105,82))
-    _add_action("ULT","ultimate",Vector2(1585,545),Vector2(150,95))
+    skill_buttons.clear()
+    skill_buttons.append(_add_action("S1","skill_1",Vector2(1110,690),Vector2(105,82)))
+    skill_buttons.append(_add_action("S2","skill_2",Vector2(1218,610),Vector2(105,82)))
+    skill_buttons.append(_add_action("S3","skill_3",Vector2(1328,585),Vector2(105,82)))
+    skill_buttons.append(_add_action("S4","skill_4",Vector2(1438,595),Vector2(105,82)))
+    ultimate_button = _add_action("ULT","ultimate",Vector2(1585,545),Vector2(150,95))
     _add_action("LOCK","lock_on",Vector2(1040,835),Vector2(145,82))
 
 func _update_lock_marker() -> void:
@@ -718,8 +793,10 @@ func _action_button(text_value: String, action: String, pos: Vector2, sz: Vector
         b.button_up.connect(func(): Input.action_release(action))
     return b
 
-func _add_action(text_value: String, action: String, pos: Vector2, sz: Vector2) -> void:
-    controls_ui.add_child(_action_button(text_value,action,pos,sz))
+func _add_action(text_value: String, action: String, pos: Vector2, sz: Vector2) -> Button:
+    var button := _action_button(text_value,action,pos,sz)
+    controls_ui.add_child(button)
+    return button
 
 func _menu_button(text_value: String, pos: Vector2, sz: Vector2, color: Color) -> Button:
     var b := Button.new()

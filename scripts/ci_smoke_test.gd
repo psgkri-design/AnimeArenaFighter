@@ -59,6 +59,9 @@ func _run() -> void:
     _check(game.camera_rig != null, "combat camera created")
     _check(game.hud.menu_ui.visible, "character select visible on boot")
     _check(is_instance_valid(game.hud.preview_fighter), "3D character preview created")
+    _check(game.hud.preview_platform_root != null, "preview platform created")
+    _check(game.hud.skill_buttons.size() == 4, "four mobile skill buttons created")
+    _check(game.hud.ultimate_button != null, "ultimate mobile button created")
     if is_instance_valid(game.hud.preview_fighter):
         _check(game.hud.preview_fighter.animation_player != null, "3D preview uses rigged animated model")
 
