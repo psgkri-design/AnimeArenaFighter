@@ -71,6 +71,11 @@ var ultimate_status_label: Label
 var round_banner_label: Label
 var skill_buttons: Array[Button] = []
 var ultimate_button: Button
+var heavy_button: Button
+var dodge_button: Button
+var dash_button: Button
+var block_button: Button
+var lock_button: Button
 var damage_overlay: ColorRect
 var damage_overlay_material: ShaderMaterial
 var last_player_health: float = -1.0
@@ -150,6 +155,42 @@ func _process(_delta: float) -> void:
             else:
                 ultimate_button.text = "ULT\n%02d%%" % int(player.ultimate)
                 ultimate_button.modulate = Color(0.78,0.82,0.92,0.90)
+
+        if heavy_button != null:
+            if player.stamina < 15.0:
+                heavy_button.text = "HVY\nLOW"
+                heavy_button.modulate = Color(0.68,0.68,0.72,0.64)
+            else:
+                heavy_button.text = "HVY"
+                heavy_button.modulate = Color.WHITE
+
+        if dodge_button != null:
+            if player.stamina < 20.0:
+                dodge_button.text = "DODGE\nLOW"
+                dodge_button.modulate = Color(0.68,0.68,0.72,0.64)
+            else:
+                dodge_button.text = "DODGE"
+                dodge_button.modulate = Color.WHITE
+
+        if dash_button != null:
+            if player.dash_cooldown > 0.05:
+                dash_button.text = "DASH\n%.1f" % player.dash_cooldown
+                dash_button.modulate = Color(0.62,0.68,0.78,0.72)
+            elif player.stamina < 14.0:
+                dash_button.text = "DASH\nLOW"
+                dash_button.modulate = Color(0.68,0.68,0.72,0.64)
+            else:
+                dash_button.text = "DASH"
+                dash_button.modulate = Color.WHITE
+
+        if block_button != null:
+            var blocking_now: bool = player.state == player.State.BLOCK
+            block_button.text = "BLOCK\nON" if blocking_now else "BLOCK"
+            block_button.modulate = Color(0.48,0.82,1.0,1.0) if blocking_now else Color.WHITE
+
+        if lock_button != null:
+            lock_button.text = "LOCK\nON" if player.lock_on else "LOCK\nOFF"
+            lock_button.modulate = Color(1.0,0.84,0.32,1.0) if player.lock_on else Color(0.68,0.72,0.82,0.78)
         if not result_ui.visible and not get_tree().paused and not timer_finished:
             round_time = maxf(0.0, round_time - _delta)
             round_timer_label.text = "%02d" % int(ceil(round_time))
@@ -656,18 +697,18 @@ func _build_game_ui() -> void:
     controls_ui.add_child(joystick)
 
     _add_action("ATK","attack",Vector2(1570,770),Vector2(145,110))
-    _add_action("HVY","heavy",Vector2(1730,660),Vector2(135,100))
-    _add_action("DODGE","dodge",Vector2(1410,840),Vector2(140,95))
-    _add_action("DASH","dash",Vector2(1260,865),Vector2(125,85))
+    heavy_button = _add_action("HVY","heavy",Vector2(1730,660),Vector2(135,100))
+    dodge_button = _add_action("DODGE","dodge",Vector2(1410,840),Vector2(140,95))
+    dash_button = _add_action("DASH","dash",Vector2(1260,865),Vector2(125,85))
     _add_action("JUMP","jump",Vector2(1735,880),Vector2(130,88))
-    _add_action("BLOCK","block",Vector2(1420,690),Vector2(135,95))
+    block_button = _add_action("BLOCK","block",Vector2(1420,690),Vector2(135,95))
     skill_buttons.clear()
     skill_buttons.append(_add_action("S1","skill_1",Vector2(1110,690),Vector2(105,82)))
     skill_buttons.append(_add_action("S2","skill_2",Vector2(1218,610),Vector2(105,82)))
     skill_buttons.append(_add_action("S3","skill_3",Vector2(1328,585),Vector2(105,82)))
     skill_buttons.append(_add_action("S4","skill_4",Vector2(1438,595),Vector2(105,82)))
     ultimate_button = _add_action("ULT","ultimate",Vector2(1585,545),Vector2(150,95))
-    _add_action("LOCK","lock_on",Vector2(1040,835),Vector2(145,82))
+    lock_button = _add_action("LOCK","lock_on",Vector2(1040,835),Vector2(145,82))
 
 func _update_lock_marker() -> void:
     if lock_target_marker == null or not is_instance_valid(player) or not is_instance_valid(enemy) or not player.lock_on:

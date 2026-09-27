@@ -569,3 +569,25 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Graphics
 - MEDIUM remains the intended 60 FPS visual target; character lighting/VFX readability is preserved while expensive projectile lighting is trimmed.
+
+
+## Update 31 — Mobile combat-state button feedback
+
+### Added
+- Added live stamina availability feedback directly to Heavy and Dodge controls.
+- Added live Dash cooldown text and low-stamina state directly to the Dash button.
+- Added persistent BLOCK ON visual feedback while the fighter is actively blocking.
+- Added explicit LOCK ON / LOCK OFF state directly to the lock-on control.
+
+### Changed
+- Mobile action buttons now communicate gameplay availability/state rather than only reacting visually when touched.
+- Unavailable stamina actions dim instead of looking fully actionable.
+- Lock-on and block controls use distinct active-state tinting for faster peripheral reading.
+
+### UI
+- Heavy/Dodge/Dash states complement the existing S1–S4 cooldown and Ultimate Ready feedback.
+- Existing pressed styles and multi-touch action bindings are preserved.
+
+### Optimization
+- State feedback only updates text/modulate on existing buttons; no runtime UI allocation is added.
+- CI validates all new combat-state button references.
