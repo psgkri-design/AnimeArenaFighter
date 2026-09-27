@@ -591,3 +591,14 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - State feedback only updates text/modulate on existing buttons; no runtime UI allocation is added.
 - CI validates all new combat-state button references.
+
+
+## Update 32 — Projectile quality lookup hotfix
+
+### Fixed
+- Projectile quality initialization no longer assumes `SceneTree.current_scene` is always assigned.
+- Added a parent-root fallback so embedded/headless smoke scenes resolve `QualityManager` safely.
+- Removes the runtime script error that caused Android CI smoke validation to fail after the projectile-light optimization.
+
+### Optimization
+- LOW/MEDIUM/HIGH projectile-light scaling remains unchanged.

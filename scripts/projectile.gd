@@ -143,7 +143,10 @@ func _ready() -> void:
     glow_light.shadow_enabled = false
     add_child(glow_light)
 
-    var quality_manager = get_tree().current_scene.get_node_or_null("QualityManager")
+    var quality_root: Node = get_tree().current_scene
+    if quality_root == null:
+        quality_root = get_parent()
+    var quality_manager = quality_root.get_node_or_null("QualityManager") if quality_root != null else null
     if quality_manager != null:
         quality_level = int(quality_manager.current_level)
     _apply_quality_profile()
