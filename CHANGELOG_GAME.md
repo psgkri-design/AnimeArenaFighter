@@ -66,3 +66,24 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - Validation is headless and adds no runtime cost to Android builds.
+
+## Update 06 — Combat animation state system
+
+### Added
+- Connected imported KayKit AnimationPlayer clips to runtime fighter states.
+- Added state-driven Idle, run, backward walk, left/right strafe, four-direction dodge, block, block-hit, hit reaction and death playback.
+- Added fighter-specific attack animation sets: dual-wield for Succubus Assassin, spell/unarmed for Arcane Mage, two-handed melee for Templar Knight and fast unarmed attacks for Cyber Bunny.
+- Added attack-specific animation metadata for light combo steps, heavy attacks, skills and ultimates.
+- Added subtle procedural body lean/bob layered on top of imported animation playback.
+
+### Changed
+- CharacterBody movement remains code-driven; imported animations are visual-only so root motion cannot reduce touch-control responsiveness.
+- Combat camera now adds speed-based dynamic FOV and a small impact FOV impulse.
+
+### Animation
+- Eliminated the previous idle-only external-model behavior.
+- Added blend times between locomotion/defense/reaction states to reduce snapping.
+- Added alternating Hit_A / Hit_B reactions and Block_Hit feedback.
+
+### Optimization
+- Reuses the AnimationPlayer already embedded in each GLB; no per-frame animation object allocation.

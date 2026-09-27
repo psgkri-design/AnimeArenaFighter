@@ -55,6 +55,10 @@ var combo_window: float = 0.0
 var combo_hits: int = 0
 var skill_cooldowns: Array[float] = [0.0,0.0,0.0,0.0]
 var model_root: Node3D
+var animation_player: AnimationPlayer = null
+var last_animation: StringName = &""
+var hit_reaction_toggle: bool = false
+var visual_phase: float = 0.0
 
 func configure(p_variant: int, p_is_ai: bool, p_ai_level: int = 1) -> void:
     variant = clampi(p_variant, 0, Roster.count() - 1)
@@ -126,20 +130,121 @@ func _try_build_external_model() -> bool:
     visual.scale = Vector3.ONE * 0.92
     visual.position = Vector3(0, 0.02, 0)
     model_root.add_child(visual)
-    _play_idle_recursive(visual)
+    animation_player = _find_animation_player(visual)
+    _play_animation(_idle_animation(), 0.0, 1.0, true)
     return true
 
-func _play_idle_recursive(node: Node) -> bool:
+func _find_animation_player(node: Node) -> AnimationPlayer:
     if node is AnimationPlayer:
-        var animation_player := node as AnimationPlayer
-        for animation_name in animation_player.get_animation_list():
-            if "idle" in String(animation_name).to_lower():
-                animation_player.play(animation_name)
-                return true
+        return node as AnimationPlayer
     for child in node.get_children():
-        if _play_idle_recursive(child):
-            return true
-    return false
+        var found: AnimationPlayer = _find_animation_player(child)
+        if found != null:
+            return found
+    return null
+
+func _idle_animation() -> StringName:
+    match variant:
+        2: return &"2H_Melee_Idle"
+        3: return &"Unarmed_Idle"
+        _: return &"Idle"
+
+func _movement_animation() -> StringName:
+    if not is_on_floor():
+        return &"Jump_Idle"
+    var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+    if horizontal.length() < 0.3:
+        return _idle_animation()
+    var local_direction: Vector3 = global_basis.inverse() * horizontal.normalized()
+    if local_direction.z > 0.45:
+        return &"Walking_Backwards"
+    if local_direction.x < -0.45:
+        return &"Running_Strafe_Left"
+    if local_direction.x > 0.45:
+        return &"Running_Strafe_Right"
+    return &"Running_A"
+
+func _dodge_animation() -> StringName:
+    var local_direction: Vector3 = global_basis.inverse() * dash_dir.normalized()
+    if local_direction.z > 0.35:
+        return &"Dodge_Backward"
+    if local_direction.z < -0.35:
+        return &"Dodge_Forward"
+    if local_direction.x < 0.0:
+        return &"Dodge_Left"
+    return &"Dodge_Right"
+
+func _attack_animation(kind: String, index: int) -> StringName:
+    if kind == "ultimate":
+        match variant:
+            0: return &"Dualwield_Melee_Attack_Chop"
+            1: return &"Spellcast_Long"
+            2: return &"2H_Melee_Attack_Spinning"
+            3: return &"Unarmed_Melee_Attack_Kick"
+    if kind == "skill":
+        match variant:
+            0: return &"Dualwield_Melee_Attack_Stab"
+            1: return &"Spellcast_Shoot"
+            2: return &"2H_Melee_Attack_Chop"
+            3: return &"Unarmed_Melee_Attack_Kick"
+    if kind == "heavy":
+        match variant:
+            0: return &"Dualwield_Melee_Attack_Chop"
+            1: return &"Unarmed_Melee_Attack_Kick"
+            2: return &"2H_Melee_Attack_Chop"
+            3: return &"Unarmed_Melee_Attack_Kick"
+
+    var clips: Array[StringName] = []
+    match variant:
+        0:
+            clips = [&"Dualwield_Melee_Attack_Slice", &"Dualwield_Melee_Attack_Chop", &"Dualwield_Melee_Attack_Stab", &"1H_Melee_Attack_Slice_Diagonal"]
+        1:
+            clips = [&"Unarmed_Melee_Attack_Punch_A", &"Unarmed_Melee_Attack_Punch_B", &"Unarmed_Melee_Attack_Kick", &"Spellcast_Shoot"]
+        2:
+            clips = [&"2H_Melee_Attack_Slice", &"2H_Melee_Attack_Chop", &"2H_Melee_Attack_Stab", &"2H_Melee_Attack_Spin"]
+        3:
+            clips = [&"Unarmed_Melee_Attack_Punch_A", &"Unarmed_Melee_Attack_Punch_B", &"Unarmed_Melee_Attack_Kick", &"Unarmed_Melee_Attack_Punch_A"]
+    if clips.is_empty():
+        return _idle_animation()
+    return clips[posmod(index, clips.size())]
+
+func _play_animation(name: StringName, blend: float = 0.12, speed: float = 1.0, force: bool = false) -> void:
+    if animation_player == null:
+        return
+    var selected: StringName = name
+    if not animation_player.has_animation(selected):
+        selected = _idle_animation()
+    if not animation_player.has_animation(selected):
+        return
+    if not force and last_animation == selected and animation_player.is_playing():
+        return
+    animation_player.play(selected, blend, speed)
+    last_animation = selected
+
+func _sync_animation() -> void:
+    if animation_player == null:
+        return
+    if state == State.ATTACK:
+        return
+    if state == State.DEAD:
+        _play_animation(&"Death_A", 0.08, 1.0)
+        return
+    if state == State.STUNNED:
+        return
+    if state == State.BLOCK:
+        _play_animation(&"Blocking", 0.10, 1.0)
+        return
+    if state == State.DASH or state == State.DODGE:
+        _play_animation(_dodge_animation(), 0.06, 1.15)
+        return
+    if state == State.MOVE or not is_on_floor():
+        _play_animation(_movement_animation(), 0.12, 1.0)
+        return
+    _play_animation(_idle_animation(), 0.16, 1.0)
+
+func _update_visuals(delta: float) -> void:
+    _animate_model(delta)
+    _sync_animation()
 
 func _decorate_external_model() -> void:
     match variant:
@@ -281,30 +386,51 @@ func set_target(p_target) -> void:
 func _physics_process(delta: float) -> void:
     _tick(delta)
     if state == State.DEAD:
-        _apply_gravity(delta); move_and_slide(); return
+        _apply_gravity(delta)
+        move_and_slide()
+        _update_visuals(delta)
+        return
     if stun_timer > 0.0:
         state = State.STUNNED
         velocity.x = move_toward(velocity.x,0.0,18.0*delta)
         velocity.z = move_toward(velocity.z,0.0,18.0*delta)
-        _apply_gravity(delta); move_and_slide(); return
+        _apply_gravity(delta)
+        move_and_slide()
+        _update_visuals(delta)
+        return
     if not current_attack.is_empty():
-        _process_attack(delta); _apply_gravity(delta); move_and_slide(); _clamp_arena(); return
+        _process_attack(delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        _clamp_arena()
+        _update_visuals(delta)
+        return
     if dash_timer > 0.0:
         state = State.DASH
         velocity.x = dash_dir.x * (22.0 if variant in [0,3] else 19.0)
         velocity.z = dash_dir.z * (22.0 if variant in [0,3] else 19.0)
-        _apply_gravity(delta); move_and_slide(); _clamp_arena(); return
+        _apply_gravity(delta)
+        move_and_slide()
+        _clamp_arena()
+        _update_visuals(delta)
+        return
     if dodge_timer > 0.0:
         state = State.DODGE
         velocity.x = dash_dir.x * 16.0
         velocity.z = dash_dir.z * 16.0
-        _apply_gravity(delta); move_and_slide(); _clamp_arena(); return
-    if is_ai: _process_ai(delta)
-    else: _process_player(delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        _clamp_arena()
+        _update_visuals(delta)
+        return
+    if is_ai:
+        _process_ai(delta)
+    else:
+        _process_player(delta)
     _apply_gravity(delta)
     move_and_slide()
     _clamp_arena()
-    _animate_model(delta)
+    _update_visuals(delta)
     stats_changed.emit(self)
 
 func _tick(delta: float) -> void:
@@ -374,16 +500,24 @@ func _light_attack() -> void:
         damages=[48.0,56.0,66.0,96.0]; ranges=[2.2,2.3,2.5,2.8]
     if combo_window<=0.0: combo_step=0
     combo_step=clampi(combo_step,0,3)
-    var data:Dictionary={"damage":damages[combo_step]*power_scale,"startup":0.08+combo_step*0.02,"active":0.10,"recovery":0.15+combo_step*0.05,"range":ranges[combo_step],"hitstun":0.20+combo_step*0.06,"knockback":2.5+combo_step*2.0,"launch":2.5 if combo_step==3 else 0.0,"block_damage":10.0+combo_step*2.0}
+    var data:Dictionary={"damage":damages[combo_step]*power_scale,"startup":0.08+combo_step*0.02,"active":0.10,"recovery":0.15+combo_step*0.05,"range":ranges[combo_step],"hitstun":0.20+combo_step*0.06,"knockback":2.5+combo_step*2.0,"launch":2.5 if combo_step==3 else 0.0,"block_damage":10.0+combo_step*2.0,"anim_kind":"light","anim_index":combo_step,"anim_speed":1.08+combo_step*0.03}
     combo_step=(combo_step+1)%4; combo_window=0.65; _start_attack(data)
 
 func _heavy_attack() -> void:
     if stamina<15.0:return
     stamina-=15.0
-    _start_attack({"damage":105.0*power_scale,"startup":0.25,"active":0.14,"recovery":0.38,"range":2.9 if variant==2 else 2.7,"hitstun":0.48,"knockback":11.0,"launch":2.8,"block_damage":28.0})
+    _start_attack({"damage":105.0*power_scale,"startup":0.25,"active":0.14,"recovery":0.38,"range":2.9 if variant==2 else 2.7,"hitstun":0.48,"knockback":11.0,"launch":2.8,"block_damage":28.0,"anim_kind":"heavy","anim_index":0,"anim_speed":0.98})
 
 func _start_attack(data:Dictionary)->void:
-    current_attack=data; attack_timer=0.0; attack_hit_done=false; state=State.ATTACK; _face_target(1.0)
+    current_attack=data
+    attack_timer=0.0
+    attack_hit_done=false
+    state=State.ATTACK
+    _face_target(1.0)
+    var anim_kind: String = String(data.get("anim_kind","light"))
+    var anim_index: int = int(data.get("anim_index",0))
+    var anim_speed: float = float(data.get("anim_speed",1.0))
+    _play_animation(_attack_animation(anim_kind, anim_index), 0.06, anim_speed, true)
 
 func _process_attack(delta:float)->void:
     attack_timer+=delta
@@ -415,6 +549,7 @@ func receive_hit(attacker,data:Dictionary)->void:
             if is_instance_valid(attacker): attacker.stun_timer=0.60; attacker.current_attack={}
             energy=minf(max_energy,energy+15.0); ultimate=minf(100.0,ultimate+10.0); perfect_parry.emit(self,attacker); return
         stamina-=float(data.get("block_damage",damage*0.3))/defense_scale; health-=damage*0.05
+        _play_animation(&"Block_Hit", 0.04, 1.0, true)
         if stamina<=0.0:stamina=0.0; stun_timer=1.1
         _check_ko(); stats_changed.emit(self); return
     health-=damage; energy=minf(max_energy,energy+damage*0.08); ultimate=minf(100.0,ultimate+damage*0.07)
@@ -424,6 +559,8 @@ func receive_hit(attacker,data:Dictionary)->void:
     direction.y=0
     if direction.length_squared()<0.01:direction=Vector3.BACK
     velocity=direction.normalized()*float(data.get("knockback",3.0)); velocity.y=float(data.get("launch",0.0))
+    hit_reaction_toggle = not hit_reaction_toggle
+    _play_animation(&"Hit_B" if hit_reaction_toggle else &"Hit_A", 0.03, 1.0, true)
     stats_changed.emit(self); _check_ko()
 
 func register_external_hit(_other,damage,pos,strength)->void:
@@ -441,6 +578,7 @@ func _try_skill(index:int)->bool:
     match index:
         0:
             skill_cooldowns[index]=4.0
+            _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
             var projectile=ProjectileScript.new()
             projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale)
             get_tree().current_scene.add_child(projectile)
@@ -450,20 +588,20 @@ func _try_skill(index:int)->bool:
             if is_instance_valid(target) and global_position.distance_to(target.global_position)<18.0:
                 var behind:Vector3=target.global_transform.basis.z.normalized()
                 global_position=target.global_position+behind*1.7; _face_target(1.0)
-                _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.06,"active":0.12,"recovery":0.28,"range":2.7,"hitstun":0.55,"knockback":10.0,"launch":2.0,"block_damage":30.0})
+                _start_attack({"damage":float(skill_damage[1])*power_scale,"startup":0.06,"active":0.12,"recovery":0.28,"range":2.7,"hitstun":0.55,"knockback":10.0,"launch":2.0,"block_damage":30.0,"anim_kind":"skill","anim_index":1,"anim_speed":1.12})
         2:
             skill_cooldowns[index]=7.5
-            _start_attack({"damage":float(skill_damage[2])*power_scale,"startup":0.18,"active":0.18,"recovery":0.35,"range":3.4 if variant==1 else 3.1,"hitstun":0.62,"knockback":12.0,"launch":3.0,"block_damage":34.0})
+            _start_attack({"damage":float(skill_damage[2])*power_scale,"startup":0.18,"active":0.18,"recovery":0.35,"range":3.4 if variant==1 else 3.1,"hitstun":0.62,"knockback":12.0,"launch":3.0,"block_damage":34.0,"anim_kind":"skill","anim_index":2,"anim_speed":1.02})
         3:
             skill_cooldowns[index]=9.5
-            _start_attack({"damage":float(skill_damage[3])*power_scale,"startup":0.32,"active":0.22,"recovery":0.45,"range":4.8,"hitstun":0.72,"knockback":15.0,"launch":4.0,"block_damage":40.0})
+            _start_attack({"damage":float(skill_damage[3])*power_scale,"startup":0.32,"active":0.22,"recovery":0.45,"range":4.8,"hitstun":0.72,"knockback":15.0,"launch":4.0,"block_damage":40.0,"anim_kind":"skill","anim_index":3,"anim_speed":0.95})
     return true
 
 func _try_ultimate()->bool:
     if ultimate<100.0 or not is_instance_valid(target):return false
     ultimate=0.0; ultimate_started.emit(self,target)
     var damages:Array[float]=[315.0,340.0,390.0,330.0]
-    _start_attack({"damage":damages[variant]*power_scale,"startup":0.62,"active":0.22,"recovery":0.75,"range":5.0,"hitstun":0.95,"knockback":20.0,"launch":6.0,"block_damage":75.0})
+    _start_attack({"damage":damages[variant]*power_scale,"startup":0.62,"active":0.22,"recovery":0.75,"range":5.0,"hitstun":0.95,"knockback":20.0,"launch":6.0,"block_damage":75.0,"anim_kind":"ultimate","anim_index":0,"anim_speed":0.90})
     return true
 
 func _process_ai(delta:float)->void:
@@ -496,7 +634,11 @@ func _process_ai(delta:float)->void:
 
 func _check_ko()->void:
     if health>0.0:return
-    health=0.0; state=State.DEAD; current_attack={}; knocked_out.emit(self)
+    health=0.0
+    state=State.DEAD
+    current_attack={}
+    _play_animation(&"Death_A", 0.04, 1.0, true)
+    knocked_out.emit(self)
 
 func _is_facing(other)->bool:
     if not is_instance_valid(other):return false
@@ -526,6 +668,22 @@ func _clamp_arena()->void:
 
 func _animate_model(delta:float)->void:
     if model_root==null:return
+    visual_phase += delta
     var speed:=Vector2(velocity.x,velocity.z).length()
-    model_root.rotation.x=lerpf(model_root.rotation.x,-clampf(speed/80.0,0.0,0.12),delta*8.0)
-    model_root.rotation.z=lerpf(model_root.rotation.z,0.10 if state==State.BLOCK else 0.0,delta*10.0)
+    var target_pitch: float = -clampf(speed/80.0,0.0,0.12)
+    var target_roll: float = 0.10 if state==State.BLOCK else 0.0
+    var target_yaw: float = 0.0
+    if state==State.DASH or state==State.DODGE:
+        target_pitch = -0.20
+    elif state==State.ATTACK and not current_attack.is_empty():
+        var total: float = float(current_attack.get("startup",0.1)) + float(current_attack.get("active",0.1)) + float(current_attack.get("recovery",0.2))
+        var phase: float = clampf(attack_timer / maxf(total,0.01),0.0,1.0)
+        var swing: float = sin(phase * PI)
+        var attack_index: int = int(current_attack.get("anim_index",0))
+        target_yaw = swing * (0.20 if attack_index % 2 == 0 else -0.20)
+        target_roll = -swing * 0.08
+    model_root.rotation.x=lerpf(model_root.rotation.x,target_pitch,clampf(delta*10.0,0.0,1.0))
+    model_root.rotation.y=lerpf(model_root.rotation.y,target_yaw,clampf(delta*14.0,0.0,1.0))
+    model_root.rotation.z=lerpf(model_root.rotation.z,target_roll,clampf(delta*12.0,0.0,1.0))
+    var idle_bob: float = sin(visual_phase * 3.0) * 0.012 if state==State.IDLE else 0.0
+    model_root.position.y=lerpf(model_root.position.y,idle_bob,clampf(delta*8.0,0.0,1.0))

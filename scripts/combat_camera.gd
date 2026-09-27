@@ -14,6 +14,7 @@ var cinematic_timer: float = 0.0
 var cinematic_attacker = null
 var cinematic_target = null
 var active_touch: int = -1
+var fov_impulse: float = 0.0
 
 func _ready() -> void:
     camera = Camera3D.new()
@@ -31,6 +32,7 @@ func set_subjects(p_player, p_target) -> void:
 func add_shake(amount: float) -> void:
     shake_strength = maxf(shake_strength, amount)
     shake_time = maxf(shake_time, 0.12 + amount * 0.05)
+    fov_impulse = maxf(fov_impulse, clampf(amount * 1.15, 0.0, 3.5))
 
 func play_ultimate(attacker, victim) -> void:
     cinematic_attacker = attacker
@@ -97,7 +99,11 @@ func _physics_process(delta: float) -> void:
     else:
         camera.position = camera.position.lerp(Vector3.ZERO, clampf(delta * 15.0, 0.0, 1.0))
 
-    camera.fov = lerpf(camera.fov, 68.0, clampf(delta * 5.0, 0.0, 1.0))
+    var player_speed: float = Vector2(player.velocity.x, player.velocity.z).length()
+    var movement_fov: float = clampf(player_speed * 0.24, 0.0, 5.0)
+    var target_fov: float = 68.0 + movement_fov + fov_impulse
+    fov_impulse = move_toward(fov_impulse, 0.0, delta * 10.0)
+    camera.fov = lerpf(camera.fov, target_fov, clampf(delta * 6.5, 0.0, 1.0))
 
 func _update_cinematic(delta: float) -> void:
     var a_pos: Vector3 = cinematic_attacker.global_position + Vector3.UP * 1.25
