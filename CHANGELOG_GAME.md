@@ -550,3 +550,22 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 ### Optimization
 - KO presentation reuses the existing camera and HUD nodes.
 - Headless CI skips the presentation delay while still validating the victory-pose state and result screen.
+
+
+## Update 30 — Android material and projectile-light optimization
+
+### Changed
+- Cyber-city tower bodies now share one material instead of creating a new StandardMaterial3D for every tower.
+- Blue/red tower bands, pillars and neon gates now reuse shared emissive materials by color family.
+- Projectile visual complexity now follows the selected LOW / MEDIUM / HIGH preset at spawn time.
+
+### Optimization
+- LOW disables projectile OmniLight3D entirely and keeps only one energy-tail segment.
+- MEDIUM keeps projectile glow at reduced energy/range and uses two trail segments.
+- HIGH keeps the full projectile glow and three-segment trail.
+- Static arena decoration now uses a small shared material set, reducing material memory and SetPass churn.
+- No visual downgrade was applied to fighter meshes, character textures or animations.
+- CI verifies the MEDIUM projectile quality profile and realtime glow path.
+
+### Graphics
+- MEDIUM remains the intended 60 FPS visual target; character lighting/VFX readability is preserved while expensive projectile lighting is trimmed.

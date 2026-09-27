@@ -98,6 +98,8 @@ func _run() -> void:
         projectile.global_position = Vector3(0.0, 18.0, 0.0)
         _check(projectile.style == variant, "projectile style propagated for variant %d" % variant)
         _check(projectile.trail_segments.size() == 3, "projectile trail built for variant %d" % variant)
+        _check(projectile.quality_level == 1, "MEDIUM projectile quality profile active")
+        _check(projectile.glow_light != null and projectile.glow_light.visible, "MEDIUM projectile glow enabled")
         projectile.queue_free()
         if variant == 0:
             _check(_print_skeleton_bones(game.player), "imported humanoid skeleton found")

@@ -17,7 +17,9 @@ var velocity := Vector3.ZERO
 var visual_root: Node3D
 var orbit_a: MeshInstance3D
 var orbit_b: MeshInstance3D
+var glow_light: OmniLight3D
 var trail_segments: Array[MeshInstance3D] = []
+var quality_level: int = 1
 
 func configure(p_source, p_target, p_color: Color, p_damage: float = 85.0, p_style: int = 0) -> void:
     source = p_source
@@ -132,14 +134,19 @@ func _ready() -> void:
         add_child(segment)
         trail_segments.append(segment)
 
-    var glow := OmniLight3D.new()
-    glow.light_color = color
+    glow_light = OmniLight3D.new()
+    glow_light.light_color = color
     var light_energy: Array[float] = [1.65,2.45,2.10,1.85]
     var light_range: Array[float] = [2.4,3.4,3.0,2.6]
-    glow.light_energy = light_energy[style]
-    glow.omni_range = light_range[style]
-    glow.shadow_enabled = false
-    add_child(glow)
+    glow_light.light_energy = light_energy[style]
+    glow_light.omni_range = light_range[style]
+    glow_light.shadow_enabled = false
+    add_child(glow_light)
+
+    var quality_manager = get_tree().current_scene.get_node_or_null("QualityManager")
+    if quality_manager != null:
+        quality_level = int(quality_manager.current_level)
+    _apply_quality_profile()
 
     var shape := CollisionShape3D.new()
     var sphere_shape := SphereShape3D.new()
@@ -154,6 +161,31 @@ func _ready() -> void:
         velocity = (target.global_position + Vector3.UP - global_position).normalized() * speed
     else:
         velocity = -global_transform.basis.z * speed
+
+func _apply_quality_profile() -> void:
+    if glow_light == null:
+        return
+    match quality_level:
+        0:
+            glow_light.visible = false
+            if orbit_b != null:
+                orbit_b.visible = false
+            for i in range(trail_segments.size()):
+                trail_segments[i].visible = i == 0
+        1:
+            glow_light.visible = true
+            glow_light.light_energy *= 0.72
+            glow_light.omni_range *= 0.82
+            if orbit_b != null:
+                orbit_b.visible = style == 1
+            for i in range(trail_segments.size()):
+                trail_segments[i].visible = i < 2
+        _:
+            glow_light.visible = true
+            if orbit_b != null:
+                orbit_b.visible = style == 1
+            for segment in trail_segments:
+                segment.visible = true
 
 func _physics_process(delta: float) -> void:
     life -= delta

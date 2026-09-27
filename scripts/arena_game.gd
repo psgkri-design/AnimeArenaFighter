@@ -25,6 +25,13 @@ var key_light: DirectionalLight3D
 var fill_light: DirectionalLight3D
 var hit_stop_serial: int = 0
 var ultimate_light_serial: int = 0
+var city_body_material: StandardMaterial3D
+var city_band_blue_material: StandardMaterial3D
+var city_band_red_material: StandardMaterial3D
+var pillar_blue_material: StandardMaterial3D
+var pillar_red_material: StandardMaterial3D
+var gate_blue_material: StandardMaterial3D
+var gate_red_material: StandardMaterial3D
 
 func _ready() -> void:
     randomize()
@@ -154,6 +161,7 @@ func _build_sky_landmarks() -> void:
     add_child(fragments)
 
 func _build_arena() -> void:
+    _build_shared_arena_materials()
     var arena_root := Node3D.new()
     arena_root.name = "Arena"
     add_child(arena_root)
@@ -250,6 +258,28 @@ func _add_floor_linework(parent: Node3D) -> void:
     instance.material_override = mat
     parent.add_child(instance)
 
+func _build_shared_arena_materials() -> void:
+    city_body_material = StandardMaterial3D.new()
+    city_body_material.albedo_color = Color(0.018,0.025,0.052)
+    city_body_material.metallic = 0.48
+    city_body_material.roughness = 0.42
+
+    city_band_blue_material = _make_shared_emissive(Color(0.08,0.48,1.0),1.7,0.34)
+    city_band_red_material = _make_shared_emissive(Color(1.0,0.08,0.34),1.7,0.34)
+    pillar_blue_material = _make_shared_emissive(Color(0.08,0.50,1.0),1.75,0.40)
+    pillar_red_material = _make_shared_emissive(Color(1.0,0.12,0.26),1.75,0.40)
+    gate_blue_material = _make_shared_emissive(Color(0.10,0.58,1.0),1.9,0.30)
+    gate_red_material = _make_shared_emissive(Color(1.0,0.10,0.36),1.9,0.30)
+
+func _make_shared_emissive(color: Color, energy: float, roughness_value: float) -> StandardMaterial3D:
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color.darkened(0.45)
+    mat.emission_enabled = true
+    mat.emission = color
+    mat.emission_energy_multiplier = energy
+    mat.roughness = roughness_value
+    return mat
+
 func _build_city_backdrop(parent: Node3D) -> void:
     for i in range(16):
         var angle := TAU * float(i) / 16.0
@@ -272,11 +302,7 @@ func _add_city_tower(parent: Node3D, pos: Vector3, height: float, width: float, 
     body.mesh = body_mesh
     body.position = pos + Vector3.UP * (height * 0.5 - 0.25)
 
-    var body_mat := StandardMaterial3D.new()
-    body_mat.albedo_color = Color(0.018,0.025,0.052)
-    body_mat.metallic = 0.48
-    body_mat.roughness = 0.42
-    body.material_override = body_mat
+    body.material_override = city_body_material
     parent.add_child(body)
     body.look_at(Vector3(0, body.position.y, 0), Vector3.UP)
 
@@ -287,12 +313,7 @@ func _add_city_tower(parent: Node3D, pos: Vector3, height: float, width: float, 
         band.mesh = band_mesh
         band.position = pos + Vector3.UP * (height * (0.35 + band_index * 0.34))
         band.rotation.y = body.rotation.y
-        var band_mat := StandardMaterial3D.new()
-        band_mat.albedo_color = accent.darkened(0.55)
-        band_mat.emission_enabled = true
-        band_mat.emission = accent
-        band_mat.emission_energy_multiplier = 1.7
-        band.material_override = band_mat
+        band.material_override = city_band_blue_material if accent.b > accent.r else city_band_red_material
         parent.add_child(band)
 
 func _add_neon_gate(parent: Node3D, pos: Vector3, rot_y: float, blue: bool) -> void:
@@ -308,7 +329,7 @@ func _add_neon_gate(parent: Node3D, pos: Vector3, rot_y: float, blue: bool) -> v
         post_mesh.size = Vector3(0.32, 5.6, 0.42)
         post.mesh = post_mesh
         post.position = Vector3(x,2.8,0)
-        post.material_override = _neon_material(accent)
+        post.material_override = gate_blue_material if blue else gate_red_material
         gate.add_child(post)
 
     var beam := MeshInstance3D.new()
@@ -316,7 +337,7 @@ func _add_neon_gate(parent: Node3D, pos: Vector3, rot_y: float, blue: bool) -> v
     beam_mesh.size = Vector3(5.2,0.32,0.42)
     beam.mesh = beam_mesh
     beam.position = Vector3(0,5.45,0)
-    beam.material_override = _neon_material(accent)
+    beam.material_override = gate_blue_material if blue else gate_red_material
     gate.add_child(beam)
 
 func _neon_material(color: Color) -> StandardMaterial3D:
@@ -369,12 +390,7 @@ func _add_pillar(parent: Node3D, pos: Vector3, blue: bool) -> void:
     pillar.mesh = mesh
     pillar.position = pos
     var color := Color(0.08, 0.5, 1.0) if blue else Color(1.0, 0.12, 0.26)
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.035, 0.045, 0.075)
-    mat.emission_enabled = true
-    mat.emission = color
-    mat.emission_energy_multiplier = 1.75
-    pillar.material_override = mat
+    pillar.material_override = pillar_blue_material if blue else pillar_red_material
     parent.add_child(pillar)
 
 func _start_match(player_variant: int, enemy_variant: int, difficulty: int) -> void:
