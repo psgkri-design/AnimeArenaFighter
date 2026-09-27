@@ -3,6 +3,9 @@ extends Node3D
 const FighterScript = preload("res://scripts/fighter.gd")
 const CameraScript = preload("res://scripts/combat_camera.gd")
 const HUDScript = preload("res://scripts/hud.gd")
+const VFXScript = preload("res://scripts/combat_vfx_pool.gd")
+
+signal sfx_requested(cue, position)
 
 var hud
 var camera_rig
@@ -12,6 +15,8 @@ var selected_player_variant: int = 0
 var selected_enemy_variant: int = 2
 var selected_difficulty: int = 1
 var match_running: bool = false
+var vfx_pool
+var hit_stop_serial: int = 0
 
 func _ready() -> void:
     randomize()
@@ -20,6 +25,10 @@ func _ready() -> void:
         DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)
     _build_world()
     _build_arena()
+
+    vfx_pool = VFXScript.new()
+    vfx_pool.name = "CombatVFXPool"
+    add_child(vfx_pool)
 
     camera_rig = CameraScript.new()
     camera_rig.name = "CombatCamera"
@@ -274,12 +283,15 @@ func _connect_fighter(fighter) -> void:
     fighter.ultimate_started.connect(_on_ultimate_started)
     fighter.perfect_evade.connect(_on_perfect_evade)
     fighter.perfect_parry.connect(_on_perfect_parry)
+    fighter.combat_fx.connect(_on_combat_fx)
 
 func _restart_match() -> void:
     _start_match(selected_player_variant, selected_enemy_variant, selected_difficulty)
 
 func _return_to_menu() -> void:
     match_running = false
+    hit_stop_serial += 1
+    Engine.time_scale = 1.0
     _destroy_fighters()
     camera_rig.set_subjects(null, null)
     hud.show_main_menu()
@@ -315,47 +327,47 @@ func _on_time_expired() -> void:
 func _on_impact(position: Vector3, strength: float, color: Color) -> void:
     camera_rig.add_shake(strength)
     _spawn_impact_vfx(position, strength, color)
+    sfx_requested.emit("impact", position)
+    _request_hit_stop(clampf(0.018 + strength * 0.020, 0.022, 0.065))
+
+func _on_combat_fx(kind: String, position: Vector3, direction: Vector3, color: Color, strength: float) -> void:
+    if vfx_pool != null:
+        vfx_pool.spawn_effect(kind, position, direction, color, strength)
+    if kind == "slash":
+        sfx_requested.emit("swing", position)
+    elif kind == "dash":
+        sfx_requested.emit("dash", position)
+    elif kind == "aura" or kind == "charge":
+        sfx_requested.emit("energy", position)
 
 func _on_ultimate_started(attacker, victim) -> void:
     camera_rig.play_ultimate(attacker, victim)
-    _spawn_impact_vfx(attacker.global_position + Vector3.UP * 1.2, 2.0, attacker.fighter_color)
+    if vfx_pool != null:
+        vfx_pool.spawn_effect("aura", attacker.global_position + Vector3.UP * 1.2, -attacker.global_transform.basis.z, attacker.fighter_color, 2.0)
+    sfx_requested.emit("ultimate", attacker.global_position)
 
 func _on_perfect_evade(fighter) -> void:
     camera_rig.add_shake(0.55)
-    _spawn_impact_vfx(fighter.global_position + Vector3.UP, 0.9, Color(0.7, 0.9, 1.0))
+    if vfx_pool != null:
+        vfx_pool.spawn_effect("dash", fighter.global_position + Vector3.UP, fighter.velocity, Color(0.7, 0.9, 1.0), 0.9)
 
 func _on_perfect_parry(defender, _attacker) -> void:
     camera_rig.add_shake(1.2)
-    _spawn_impact_vfx(defender.global_position + Vector3.UP * 1.2, 1.4, Color(1.0, 0.85, 0.25))
+    if vfx_pool != null:
+        vfx_pool.spawn_effect("impact", defender.global_position + Vector3.UP * 1.2, Vector3.UP, Color(1.0, 0.85, 0.25), 1.4)
+    sfx_requested.emit("parry", defender.global_position)
+    _request_hit_stop(0.055)
 
 func _spawn_impact_vfx(position: Vector3, strength: float, color: Color) -> void:
-    var root := Node3D.new()
-    root.global_position = position
-    add_child(root)
-    var core := MeshInstance3D.new()
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.25
-    sphere.height = 0.5
-    core.mesh = sphere
-    var mat := ShaderMaterial.new()
-    mat.shader = load("res://shaders/energy.gdshader")
-    mat.set_shader_parameter("energy_color", color)
-    core.material_override = mat
-    root.add_child(core)
-    for i in range(7):
-        var ray := MeshInstance3D.new()
-        var box := BoxMesh.new()
-        box.size = Vector3(0.045, 0.045, 1.4 + strength * 0.35)
-        ray.mesh = box
-        ray.material_override = mat
-        ray.rotation = Vector3(randf_range(-0.8, 0.8), randf_range(0.0, TAU), randf_range(-0.8, 0.8))
-        ray.position = -ray.transform.basis.z * 0.45
-        root.add_child(ray)
-    root.scale = Vector3.ONE * 0.25
-    var tween := create_tween()
-    tween.set_parallel(true)
-    tween.tween_property(root, "scale", Vector3.ONE * (0.8 + strength * 0.38), 0.10)
-    tween.tween_property(root, "rotation:y", randf_range(-1.0, 1.0), 0.18)
-    tween.set_parallel(false)
-    tween.tween_interval(0.08)
-    tween.tween_callback(root.queue_free)
+    if vfx_pool != null:
+        vfx_pool.spawn_effect("impact", position, Vector3.UP, color, strength)
+
+func _request_hit_stop(duration: float) -> void:
+    if DisplayServer.get_name() == "headless":
+        return
+    hit_stop_serial += 1
+    var serial: int = hit_stop_serial
+    Engine.time_scale = 0.08
+    await get_tree().create_timer(duration, true, false, true).timeout
+    if serial == hit_stop_serial:
+        Engine.time_scale = 1.0

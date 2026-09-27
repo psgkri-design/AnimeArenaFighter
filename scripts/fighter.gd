@@ -7,6 +7,7 @@ signal impact(position, strength, color)
 signal ultimate_started(attacker, target)
 signal perfect_evade(fighter)
 signal perfect_parry(defender, attacker)
+signal combat_fx(kind, position, direction, color, strength)
 
 enum State { IDLE, MOVE, DASH, DODGE, ATTACK, BLOCK, STUNNED, DEAD }
 
@@ -484,6 +485,7 @@ func _try_dash() -> bool:
     dash_dir=_input_world(Input.get_vector("move_left","move_right","move_forward","move_back"))
     if dash_dir.length_squared()<0.01: dash_dir=-global_transform.basis.z
     stamina-=14.0; dash_timer=0.18; dash_cooldown=0.34 if variant in [0,3] else 0.42
+    combat_fx.emit("dash", global_position + Vector3.UP * 0.9, dash_dir, fighter_color, 0.85)
     return true
 
 func _try_dodge(direction: Vector3=Vector3.ZERO) -> bool:
@@ -491,6 +493,7 @@ func _try_dodge(direction: Vector3=Vector3.ZERO) -> bool:
     if direction.length_squared()<0.01: direction=_input_world(Input.get_vector("move_left","move_right","move_forward","move_back"))
     if direction.length_squared()<0.01: direction=global_transform.basis.z
     dash_dir=direction.normalized(); stamina-=20.0; dodge_timer=0.26; iframe_timer=0.21
+    combat_fx.emit("dash", global_position + Vector3.UP * 0.9, dash_dir, fighter_color, 0.72)
     return true
 
 func _light_attack() -> void:
@@ -518,6 +521,9 @@ func _start_attack(data:Dictionary)->void:
     var anim_index: int = int(data.get("anim_index",0))
     var anim_speed: float = float(data.get("anim_speed",1.0))
     _play_animation(_attack_animation(anim_kind, anim_index), 0.06, anim_speed, true)
+    var fx_kind: String = "aura" if anim_kind == "ultimate" else ("charge" if anim_kind == "skill" and variant == 1 else "slash")
+    var fx_strength: float = 1.75 if anim_kind == "ultimate" else (1.25 if anim_kind == "skill" or anim_kind == "heavy" else 0.75)
+    combat_fx.emit(fx_kind, global_position + Vector3.UP * 1.15 - global_transform.basis.z * 0.85, -global_transform.basis.z, fighter_color, fx_strength)
 
 func _process_attack(delta:float)->void:
     attack_timer+=delta
@@ -579,6 +585,7 @@ func _try_skill(index:int)->bool:
         0:
             skill_cooldowns[index]=4.0
             _play_animation(_attack_animation("skill", index), 0.06, 1.08, true)
+            combat_fx.emit("charge", global_position + Vector3.UP * 1.25, -global_transform.basis.z, fighter_color, 1.15)
             var projectile=ProjectileScript.new()
             projectile.configure(self,target,fighter_color,float(skill_damage[0])*power_scale)
             get_tree().current_scene.add_child(projectile)

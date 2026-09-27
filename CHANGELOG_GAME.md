@@ -87,3 +87,25 @@ This file tracks meaningful gameplay, graphics, animation, UI, optimization and 
 
 ### Optimization
 - Reuses the AnimationPlayer already embedded in each GLB; no per-frame animation object allocation.
+
+## Update 07 — Pooled combat VFX and impact feedback
+
+### Added
+- Added a preallocated 24-slot combat VFX pool for impact bursts, slash arcs, dash trails, energy charge and aura effects.
+- Added fighter combat-FX events for attacks, skills, dashes and dodges.
+- Added SFX hook events for swing, impact, dash, energy, parry and ultimate cues.
+- Added short strength-scaled hit-stop on impacts and parries.
+
+### Changed
+- Replaced per-hit Node3D/Mesh/Tween creation and queue_free calls with reusable pooled effects.
+- Ultimate startup now triggers a pooled aura effect.
+- Perfect evade and parry now use dedicated pooled visual feedback.
+
+### Graphics
+- Attack startup now produces readable fighter-colored slash/energy shapes.
+- Dash movement now leaves a brief directional energy streak.
+
+### Optimization
+- Combat VFX meshes and shader materials are preallocated once.
+- Hit-stop is disabled in headless CI so automated gameplay tests remain deterministic.
+- VFX pool exposes LOW/MEDIUM/HIGH ray-count scaling for the upcoming quality presets.
