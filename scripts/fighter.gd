@@ -85,6 +85,9 @@ var right_foot_clearance: float = -1.0
 var visual_quality: int = 1
 var adult_rig: bool = false
 var adult_animation_verified: bool = false
+var adult_failure_reason: String = ""
+var adult_track_checked: int = 0
+var adult_track_matched: int = 0
 var ground_shadow: MeshInstance3D = null
 var ground_shadow_material: ShaderMaterial = null
 var ground_shadow_timer: float = 0.0
@@ -153,16 +156,22 @@ func _try_build_external_model() -> bool:
 
 func _try_build_adult_quaternius_model() -> bool:
     var path: String = ADULT_BODY_PATHS[variant]
-    if not ResourceLoader.exists(path) or not ResourceLoader.exists(ADULT_ANIMATION_PATH):
+    if not ResourceLoader.exists(path):
+        adult_failure_reason = "body resource missing: " + path
+        return false
+    if not ResourceLoader.exists(ADULT_ANIMATION_PATH):
+        adult_failure_reason = "animation resource missing"
         return false
 
     var resource: Resource = load(path)
     if not (resource is PackedScene):
+        adult_failure_reason = "body did not import as PackedScene"
         return false
 
     var scene := resource as PackedScene
     var visual := scene.instantiate() as Node3D
     if visual == null:
+        adult_failure_reason = "adult scene instantiate failed"
         return false
 
     visual.name = "AdultCharacter"
@@ -175,6 +184,7 @@ func _try_build_adult_quaternius_model() -> bool:
     _stylize_external_materials(visual)
     skeleton = _find_skeleton(visual)
     if skeleton == null:
+        adult_failure_reason = "adult Skeleton3D not found"
         visual.queue_free()
         adult_rig = false
         return false
@@ -186,6 +196,7 @@ func _try_build_adult_quaternius_model() -> bool:
 
     var adult_library: AnimationLibrary = _get_adult_animation_library()
     if adult_library == null:
+        adult_failure_reason = "UAL1 AnimationLibrary not found or missing core clips"
         visual.queue_free()
         adult_rig = false
         animation_player = null
@@ -195,6 +206,7 @@ func _try_build_adult_quaternius_model() -> bool:
     animation_player.add_animation_library("", adult_library)
     adult_animation_verified = _library_drives_current_skeleton(adult_library)
     if not adult_animation_verified:
+        adult_failure_reason = "animation tracks do not match adult skeleton: %d/%d" % [adult_track_matched,adult_track_checked]
         visual.queue_free()
         adult_rig = false
         animation_player = null
@@ -294,6 +306,8 @@ func _library_drives_current_skeleton(library: AnimationLibrary) -> bool:
                 matched += 1
         if checked >= 10:
             break
+    adult_track_checked = checked
+    adult_track_matched = matched
     return checked > 0 and float(matched) / float(checked) >= 0.72
 
 func _find_first_bone(candidates: Array[StringName]) -> int:

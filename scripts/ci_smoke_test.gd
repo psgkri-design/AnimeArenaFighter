@@ -102,6 +102,7 @@ func _run() -> void:
         _check(game.hud.round_active, "round timer active after FIGHT gate")
         _check(not game.hud.menu_ui.visible and game.hud.game_ui.visible, "battle HUD active")
         _check(game.player.variant == variant, "selected player data propagated")
+        print("ADULT_DIAGNOSTIC variant=",variant," active=",game.player.adult_rig," verified=",game.player.adult_animation_verified," reason=",game.player.adult_failure_reason," matched=",game.player.adult_track_matched,"/",game.player.adult_track_checked)
         _check(game.player.adult_rig, "adult-proportion Quaternius rig active for variant %d" % variant)
         _check(game.player.adult_animation_verified, "adult animation library drives skeleton for variant %d" % variant)
         _check(game.player.animation_player != null and game.player.animation_player.has_animation("Idle_Loop"), "adult Idle_Loop available")
